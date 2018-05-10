@@ -44,6 +44,7 @@ func (f *Fifo) Push(data interface{}) {
 		last.next = elem
 		f.tail = elem
 	}
+
 	f.len++
 }
 

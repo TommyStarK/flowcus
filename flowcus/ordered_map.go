@@ -29,6 +29,7 @@ func (o *OrderedMap) Delete(key interface{}) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
