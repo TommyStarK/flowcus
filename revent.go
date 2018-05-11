@@ -6,6 +6,7 @@ import (
 
 type Revent struct {
 	Data interface{}
+	Test interface{}
 }
 
 func (r *Revent) Empty() bool {
