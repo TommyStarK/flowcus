@@ -28,7 +28,8 @@ Each Contribution is welcomed and encouraged. I do not claim to cover each use c
 
 The only way i found to link the data produced and the data consumed is an ID, no matter its type.
 Before going deeper in your test, you will have to be able to retrieve this ID from the data consumed.
-N.B: I am trying to find another way to link data consumed and producer without relying on a ID.
+
+N.B: I am trying to find another way to link data consumed and produced without relying on a ID.
 
 ```go
     package main
