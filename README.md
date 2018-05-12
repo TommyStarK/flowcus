@@ -73,9 +73,9 @@ N.B: I am trying to find another way to link data consumed and produced without 
             // Your logic
 
             // A Revent has two attributes, both interfaces and both mandatory.
-            // Data: the data consumed than you want to test.
+            // Data: the data consumed that you want to test.
             // Func: the function to execute to perform your test.
-            // this function must have the following signature func(*OrderedMap, interface{})(interface{}, error)
+            // this function must have the following signature func(*flow.OrderedMap, interface{})(interface{}, error)
             revent := &flow.Revent{
                 Data: "this is some data consumed on which i want to perform some tests",
                 Func: performTest,
@@ -88,7 +88,6 @@ N.B: I am trying to find another way to link data consumed and produced without 
             close(com)
         })
 
-        // Start the data flow test
         flowcus.Start()
         // Write results to a JSON file name "report.json"
         flowcus.ReportToJSON("report.json")
