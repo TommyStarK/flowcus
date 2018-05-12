@@ -17,6 +17,7 @@ func (t *Test) Empty() bool {
 }
 
 type Report struct {
+	Coverage float64
 	Date     string
 	Duration time.Duration
 	Type     string

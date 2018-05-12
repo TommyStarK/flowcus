@@ -11,7 +11,13 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/fatih/color"
 )
+
+var Red = color.New(color.FgRed).SprintFunc()
+var Green = color.New(color.FgGreen).SprintFunc()
+var Purple = color.New(color.FgMagenta).SprintFunc()
 
 func NewFlowcus() *Flowcus {
 	return &Flowcus{
@@ -41,11 +47,13 @@ type Flowcus struct {
 
 func (f *Flowcus) synthetize() {
 	report := &Report{
+		Coverage: 0,
 		Date:     time.Now().String(),
 		Duration: 0,
 		Version:  0.1,
 	}
 
+	success := 0
 	for _, key := range f.tests.Keys() {
 		if flow := f.tests.Get(key); flow != nil {
 			test := &Test{
@@ -56,11 +64,15 @@ func (f *Flowcus) synthetize() {
 				Tester:   flow.(*Flow).tester,
 			}
 
+			if test.Success {
+				success++
+			}
 			report.Duration += test.Duration
 			report.Tests = append(report.Tests, test)
 		}
 	}
 
+	report.Coverage = float64(success) / float64(f.tests.Len()) * float64(100)
 	f.report = report
 }
 
@@ -169,6 +181,21 @@ func (f *Flowcus) ReportAsString() (string, error) {
 	}
 
 	return string(report), nil
+}
+
+func (f *Flowcus) ReportToCLI() {
+	if f.report == nil {
+		return
+	}
+
+	log.Printf("[%s] Tests took: %s. %g%% of %s , %g%% of %s for a total of %d tests performed.",
+		Purple("Flowcus"),
+		f.report.Duration.String(),
+		f.report.Coverage,
+		Green("success"),
+		float64(100)-f.report.Coverage,
+		Red("failure"),
+		f.tests.Len())
 }
 
 func (f *Flowcus) ReportToJSON(filename string) error {
