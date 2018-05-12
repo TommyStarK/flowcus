@@ -51,10 +51,10 @@ type Flowcus struct {
 	report   *Report
 }
 
-func (f *Flowcus) synthetize() {
+func (f *Flowcus) synthesize() {
 	report := &Report{
 		Coverage: 0,
-		Date:     time.Now().String(),
+		Date:     time.Now().Format("2006-01-2 15:04:05 (MST)"),
 		Duration: 0,
 		Version:  VERSION,
 	}
@@ -236,5 +236,5 @@ func (f *Flowcus) Start() {
 	f.wait.Wait()
 
 	close(sig)
-	f.synthetize()
+	f.synthesize()
 }
