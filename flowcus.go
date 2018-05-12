@@ -67,7 +67,6 @@ func (f *Flowcus) synthetize() {
 func (f *Flowcus) process() {
 	if f.jobs.Len() > 0 {
 		job := f.jobs.Pop()
-
 		if job.(*Revent).Test == nil {
 			log.Println("no func provided in Revent")
 			return
@@ -185,8 +184,12 @@ func (f *Flowcus) ReportToJSON(filename string) error {
 }
 
 func (f *Flowcus) Start() {
-	if f.producer == nil || f.consumer == nil {
-		log.Fatalf("Error: Flowcus requires a consumer and a producer.")
+	if f.producer == nil {
+		log.Fatalf("Error: Flowcus requires a producer. Exiting.")
+	}
+
+	if f.consumer == nil {
+		log.Fatalf("Error: Flowcus requires a consumer. Exiting.")
 	}
 
 	sig := make(chan os.Signal, 2)
