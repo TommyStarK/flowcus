@@ -89,7 +89,7 @@ N.B: I am trying to find another way to link data consumed and produced without 
         })
 
         flowcus.Start()
-        // Write results to a JSON file name "report.json"
+        // Write results to a JSON file named "report.json"
         flowcus.ReportToJSON("report.json")
     }
 ```
