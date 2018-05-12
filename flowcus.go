@@ -15,9 +15,15 @@ import (
 	"github.com/fatih/color"
 )
 
-var Red = color.New(color.FgRed).SprintFunc()
-var Green = color.New(color.FgGreen).SprintFunc()
-var Purple = color.New(color.FgMagenta).SprintFunc()
+const (
+	VERSION float64 = 0.1
+)
+
+var (
+	Red    = color.New(color.FgRed).SprintFunc()
+	Green  = color.New(color.FgGreen).SprintFunc()
+	Purple = color.New(color.FgMagenta).SprintFunc()
+)
 
 func NewFlowcus() *Flowcus {
 	return &Flowcus{
@@ -50,7 +56,7 @@ func (f *Flowcus) synthetize() {
 		Coverage: 0,
 		Date:     time.Now().String(),
 		Duration: 0,
-		Version:  0.1,
+		Version:  VERSION,
 	}
 
 	success := 0
@@ -188,7 +194,7 @@ func (f *Flowcus) ReportToCLI() {
 		return
 	}
 
-	log.Printf("[%s] Tests took: %s. %g%% of %s , %g%% of %s for a total of %d tests performed.",
+	log.Printf("[%s] Tests took: %s. %g%% of %s, %g%% of %s for a total of %d tests performed.",
 		Purple("Flowcus"),
 		f.report.Duration.String(),
 		f.report.Coverage,
