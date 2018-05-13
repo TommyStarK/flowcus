@@ -15,7 +15,7 @@ Each Contribution is welcomed and encouraged. I do not claim to cover each use c
 ## Install
 
 ```bash
-    go get github.com/TommyStarK/flowcus
+    go get -u github.com/TommyStarK/flowcus
 ```
 
 ## Test
