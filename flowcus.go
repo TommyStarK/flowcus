@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"runtime"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -20,9 +21,9 @@ const (
 )
 
 var (
-	Red    = color.New(color.FgRed).SprintFunc()
-	Green  = color.New(color.FgGreen).SprintFunc()
-	Purple = color.New(color.FgMagenta).SprintFunc()
+	red    = color.New(color.FgRed).SprintFunc()
+	green  = color.New(color.FgGreen).SprintFunc()
+	purple = color.New(color.FgMagenta).SprintFunc()
 )
 
 func NewFlowcus() *Flowcus {
@@ -36,6 +37,7 @@ func NewFlowcus() *Flowcus {
 		nil,
 		nil,
 		nil,
+		0,
 	}
 }
 
@@ -43,12 +45,13 @@ type Flowcus struct {
 	jobs     *Fifo
 	tests    *OrderedMap
 	mutex    *sync.Mutex
-	wait     *sync.WaitGroup
+	waitGrp  *sync.WaitGroup
 	event    chan *Event
 	revent   chan *Revent
 	producer func(chan<- *Event)
 	consumer func(chan<- *Revent)
 	report   *Report
+	tsafe    uint64
 }
 
 func (f *Flowcus) synthesize() {
@@ -121,7 +124,7 @@ func (f *Flowcus) flowcus(sig chan os.Signal) {
 			log.Println("recover:", r)
 		}
 
-		f.wait.Done()
+		f.waitGrp.Done()
 	}()
 
 	run := true
@@ -165,22 +168,25 @@ func (f *Flowcus) flowcus(sig chan os.Signal) {
 func (f *Flowcus) Consumer(fn func(chan<- *Revent)) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
-
 	f.consumer = fn
 }
 
 func (f *Flowcus) Producer(fn func(chan<- *Event)) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
-
 	f.producer = fn
 }
 
 func (f *Flowcus) Report() *Report {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
 	return f.report
 }
 
 func (f *Flowcus) ReportAsString() (string, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
 	report, err := json.Marshal(f.report)
 	if err != nil {
 		return "", err
@@ -190,17 +196,20 @@ func (f *Flowcus) ReportAsString() (string, error) {
 }
 
 func (f *Flowcus) ReportToCLI() {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
 	if f.report == nil {
 		return
 	}
 
 	log.Printf("[%s] Tests took: %s. %g%% of %s, %g%% of %s for a total of %d tests performed.",
-		Purple("Flowcus"),
+		purple("Flowcus"),
 		f.report.Duration.String(),
 		f.report.Coverage,
-		Green("success"),
+		green("success"),
 		float64(100)-f.report.Coverage,
-		Red("failure"),
+		red("failure"),
 		f.tests.Len())
 }
 
@@ -217,6 +226,10 @@ func (f *Flowcus) ReportToJSON(filename string) error {
 }
 
 func (f *Flowcus) Start() {
+	if tsafe := atomic.LoadUint64(&f.tsafe); tsafe == 1 {
+		log.Fatalln("Error: Start() can be called only once")
+	}
+
 	if f.producer == nil {
 		log.Fatalf("Error: Flowcus requires a producer. Exiting.")
 	}
@@ -225,15 +238,16 @@ func (f *Flowcus) Start() {
 		log.Fatalf("Error: Flowcus requires a consumer. Exiting.")
 	}
 
+	atomic.AddUint64(&f.tsafe, 1)
 	sig := make(chan os.Signal, 2)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 
 	go f.producer(f.event)
 	go f.consumer(f.revent)
 
-	f.wait.Add(1)
+	f.waitGrp.Add(1)
 	go f.flowcus(sig)
-	f.wait.Wait()
+	f.waitGrp.Wait()
 
 	close(sig)
 	f.synthesize()
