@@ -51,7 +51,7 @@ type Flowcus struct {
 	producer func(chan<- *Event)
 	consumer func(chan<- *Revent)
 	report   *Report
-	tsafe    uint64
+	once     uint64
 }
 
 func (f *Flowcus) synthesize() {
@@ -226,8 +226,8 @@ func (f *Flowcus) ReportToJSON(filename string) error {
 }
 
 func (f *Flowcus) Start() {
-	if tsafe := atomic.LoadUint64(&f.tsafe); tsafe == 1 {
-		log.Fatalln("Error: Start() can be called only once")
+	if once := atomic.LoadUint64(&f.once); once == 1 {
+		log.Fatalf("Error: Start() can be called only once")
 	}
 
 	if f.producer == nil {
@@ -238,7 +238,7 @@ func (f *Flowcus) Start() {
 		log.Fatalf("Error: Flowcus requires a consumer. Exiting.")
 	}
 
-	atomic.AddUint64(&f.tsafe, 1)
+	atomic.AddUint64(&f.once, 1)
 	sig := make(chan os.Signal, 2)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 

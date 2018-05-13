@@ -19,8 +19,8 @@ func TestNewFlowcus(t *testing.T) {
 		t.Errorf("mutex should be of type *sync.Mutex")
 	}
 
-	if flowcus.wait == nil {
-		t.Errorf("wait should be of type *sync.WaitGroup")
+	if flowcus.waitGrp == nil {
+		t.Errorf("waitGrp should be of type *sync.WaitGroup")
 	}
 
 	if flowcus.tests.Len() > 0 {
