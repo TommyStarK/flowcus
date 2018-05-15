@@ -2,6 +2,7 @@ package flowcus
 
 import (
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"log"
 	"os"
@@ -18,10 +19,7 @@ import (
 
 const (
 	VERSION float64 = 0.1
-)
-
-const (
-	EVENT int = iota
+	EVENT   int     = iota
 	REVENT
 )
 
@@ -33,6 +31,7 @@ var (
 
 func NewFlowcus() *Flowcus {
 	return &Flowcus{
+		NewFifo(),
 		NewFifo(),
 		NewOrderedMap(),
 		&sync.Mutex{},
@@ -49,6 +48,7 @@ func NewFlowcus() *Flowcus {
 
 type Flowcus struct {
 	jobs     *Fifo
+	errors   *Fifo
 	tests    *OrderedMap
 	mutex    *sync.Mutex
 	waitGrp  *sync.WaitGroup
@@ -66,6 +66,7 @@ func (f *Flowcus) synthesize() {
 		Coverage: 0,
 		Date:     time.Now().Format("2006-01-2 15:04:05 (MST)"),
 		Duration: 0,
+		Number:   f.tests.Len(),
 		Version:  VERSION,
 	}
 
@@ -75,6 +76,7 @@ func (f *Flowcus) synthesize() {
 			test := &Test{
 				Id:       key,
 				Duration: flow.(*Flow).duration,
+				Label:    flow.(*Flow).label,
 				Sample:   flow.(*Flow).sample,
 				Success:  flow.(*Flow).success,
 				Tester:   flow.(*Flow).tester,
@@ -88,6 +90,11 @@ func (f *Flowcus) synthesize() {
 		}
 	}
 
+	for f.errors.Len() > 0 {
+		err := f.errors.Pop()
+		report.Errors = append(report.Errors, err.(error).Error())
+	}
+
 	report.Coverage = float64(success) / float64(f.tests.Len()) * float64(100)
 	f.report = report
 }
@@ -95,7 +102,7 @@ func (f *Flowcus) synthesize() {
 func (f *Flowcus) process() {
 	job := f.jobs.Pop()
 	if job.(*Revent).Test == nil {
-		log.Println("no func provided in Revent")
+		f.errors.Push(errors.New("No test function provided"))
 		return
 	}
 
@@ -104,7 +111,7 @@ func (f *Flowcus) process() {
 		start := time.Now()
 		id, err := job.(*Revent).Test.(func(*OrderedMap, interface{}) (interface{}, error))(f.tests, job.(*Revent).Data)
 		if err != nil {
-			log.Println("Error executing Test from Revent:", err)
+			f.errors.Push(err)
 			return
 		}
 
@@ -116,7 +123,7 @@ func (f *Flowcus) process() {
 		}
 
 	default:
-		log.Println("wrong type func in Revent")
+		f.errors.Push(errors.New("Test func got the wrong type. Test func should be of type func(*OrderedMap, interface{})(interface, error)"))
 	}
 }
 
@@ -137,7 +144,7 @@ func (f *Flowcus) flowcus(sig chan os.Signal) {
 		case event, open := <-f.event:
 			if open {
 				if event != nil && !event.Empty() {
-					f.tests.Set(event.Id, &Flow{Data: event.Data, duration: 0, success: false, tester: ""})
+					f.tests.Set(event.Id, &Flow{Data: event.Data, duration: 0, label: event.Label, success: false, tester: ""})
 				}
 			} else if !open && !f.watcher[EVENT] {
 				f.watcher[EVENT] = true

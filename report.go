@@ -7,6 +7,7 @@ import (
 type Test struct {
 	Id       interface{}
 	Duration time.Duration
+	Label    string
 	Sample   interface{}
 	Success  bool
 	Tester   string
@@ -20,6 +21,8 @@ type Report struct {
 	Coverage float64
 	Date     string
 	Duration time.Duration
+	Errors   []string
+	Number   int
 	Type     string
 	Version  float64
 	Tests    []*Test

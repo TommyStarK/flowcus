@@ -8,6 +8,7 @@ import (
 type Flow struct {
 	Data     interface{}
 	duration time.Duration
+	label    string
 	sample   interface{}
 	success  bool
 	tester   string

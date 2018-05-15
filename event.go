@@ -5,8 +5,9 @@ import (
 )
 
 type Event struct {
-	Data interface{}
-	Id   interface{}
+	Data  interface{}
+	Id    interface{}
+	Label string
 }
 
 func (e *Event) Empty() bool {
