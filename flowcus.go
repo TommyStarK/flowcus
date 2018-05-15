@@ -20,6 +20,11 @@ const (
 	VERSION float64 = 0.1
 )
 
+const (
+	EVENT int = iota
+	REVENT
+)
+
 var (
 	red    = color.New(color.FgRed).SprintFunc()
 	green  = color.New(color.FgGreen).SprintFunc()
@@ -38,6 +43,7 @@ func NewFlowcus() *Flowcus {
 		nil,
 		nil,
 		0,
+		map[int]bool{EVENT: false, REVENT: false},
 	}
 }
 
@@ -52,6 +58,7 @@ type Flowcus struct {
 	consumer func(chan<- *Revent)
 	report   *Report
 	once     uint64
+	watcher  map[int]bool
 }
 
 func (f *Flowcus) synthesize() {
@@ -86,36 +93,31 @@ func (f *Flowcus) synthesize() {
 }
 
 func (f *Flowcus) process() {
-	if f.jobs.Len() > 0 {
-		job := f.jobs.Pop()
-		if job.(*Revent).Test == nil {
-			log.Println("no func provided in Revent")
+	job := f.jobs.Pop()
+	if job.(*Revent).Test == nil {
+		log.Println("no func provided in Revent")
+		return
+	}
+
+	switch job.(*Revent).Test.(type) {
+	case func(*OrderedMap, interface{}) (interface{}, error):
+		start := time.Now()
+		id, err := job.(*Revent).Test.(func(*OrderedMap, interface{}) (interface{}, error))(f.tests, job.(*Revent).Data)
+		if err != nil {
+			log.Println("Error executing Test from Revent:", err)
 			return
 		}
 
-		switch job.(*Revent).Test.(type) {
-		case func(*OrderedMap, interface{}) (interface{}, error):
-			start := time.Now()
-			id, err := job.(*Revent).Test.(func(*OrderedMap, interface{}) (interface{}, error))(f.tests, job.(*Revent).Data)
-			if err != nil {
-				log.Println("Error executing Test from Revent:", err)
-				return
-			}
-
-			if test := f.tests.Get(id); test != nil {
-				test.(*Flow).duration = time.Since(start)
-				test.(*Flow).sample = job.(*Revent).Data
-				test.(*Flow).success = true
-				test.(*Flow).tester = runtime.FuncForPC(reflect.ValueOf(job.(*Revent).Test).Pointer()).Name()
-			}
-
-		default:
-			log.Println("wrong type func in Revent")
+		if test := f.tests.Get(id); test != nil {
+			test.(*Flow).duration = time.Since(start)
+			test.(*Flow).sample = job.(*Revent).Data
+			test.(*Flow).success = true
+			test.(*Flow).tester = runtime.FuncForPC(reflect.ValueOf(job.(*Revent).Test).Pointer()).Name()
 		}
 
-		return
+	default:
+		log.Println("wrong type func in Revent")
 	}
-	<-time.After(50 * time.Millisecond)
 }
 
 func (f *Flowcus) flowcus(sig chan os.Signal) {
@@ -127,41 +129,33 @@ func (f *Flowcus) flowcus(sig chan os.Signal) {
 		f.waitGrp.Done()
 	}()
 
-	run := true
-	for run {
+	for !f.watcher[EVENT] || !f.watcher[REVENT] {
 		select {
 		case signal := <-sig:
 			panic(signal)
 
 		case event, open := <-f.event:
-			if !open {
-				if f.jobs.Len() > 0 {
-					f.process()
-				} else {
-					<-time.After(50 * time.Millisecond)
+			if open {
+				if event != nil && !event.Empty() {
+					f.tests.Set(event.Id, &Flow{Data: event.Data, duration: 0, success: false, tester: ""})
 				}
-			}
-
-			if event != nil && !event.Empty() {
-				f.tests.Set(event.Id, &Flow{Data: event.Data, duration: 0, success: false, tester: ""})
+			} else if !open && !f.watcher[EVENT] {
+				f.watcher[EVENT] = true
 			}
 
 		case revent, open := <-f.revent:
-			if !open {
-				if f.jobs.Len() > 0 {
-					f.process()
-				} else {
-					run = false
+			if open {
+				if revent != nil && !revent.Empty() {
+					f.jobs.Push(revent)
 				}
+			} else if !open && !f.watcher[REVENT] {
+				f.watcher[REVENT] = true
 			}
-
-			if revent != nil && !revent.Empty() {
-				f.jobs.Push(revent)
-			}
-
-		default:
-			f.process()
 		}
+	}
+
+	for f.jobs.Len() > 0 {
+		f.process()
 	}
 }
 
