@@ -31,43 +31,41 @@ var (
 
 func NewFlowcus() *Flowcus {
 	return &Flowcus{
+		0,
 		NewFifo(),
 		NewFifo(),
+		nil,
 		NewOrderedMap(),
-		&sync.Mutex{},
 		&sync.WaitGroup{},
 		make(chan *Event, 1),
 		make(chan *Revent, 1),
 		nil,
 		nil,
-		nil,
-		0,
 		map[int]bool{EVENT: false, REVENT: false},
 	}
 }
 
 type Flowcus struct {
-	jobs     *Fifo
+	once     uint64
 	errors   *Fifo
+	jobs     *Fifo
+	report   *Report
 	tests    *OrderedMap
-	mutex    *sync.Mutex
 	waitGrp  *sync.WaitGroup
 	event    chan *Event
 	revent   chan *Revent
 	producer func(chan<- *Event)
 	consumer func(chan<- *Revent)
-	report   *Report
-	once     uint64
 	watcher  map[int]bool
 }
 
 func (f *Flowcus) synthesize() {
 	report := &Report{
-		Coverage: 0,
 		Date:     time.Now().Format("2006-01-2 15:04:05 (MST)"),
-		Duration: 0,
-		Number:   f.tests.Len(),
 		Version:  VERSION,
+		Number:   f.tests.Len(),
+		Coverage: 0,
+		Duration: 0,
 	}
 
 	success := 0
@@ -75,11 +73,11 @@ func (f *Flowcus) synthesize() {
 		if flow := f.tests.Get(key); flow != nil {
 			test := &Test{
 				Id:       key,
-				Duration: flow.(*Flow).duration,
 				Label:    flow.(*Flow).label,
-				Sample:   flow.(*Flow).sample,
 				Success:  flow.(*Flow).success,
+				Duration: flow.(*Flow).duration,
 				Tester:   flow.(*Flow).tester,
+				Sample:   flow.(*Flow).sample,
 			}
 
 			if test.Success {
@@ -92,7 +90,7 @@ func (f *Flowcus) synthesize() {
 
 	for f.errors.Len() > 0 {
 		err := f.errors.Pop()
-		report.Errors = append(report.Errors, err.(error).Error())
+		report.Errors = append(report.Errors, err.(*Error))
 	}
 
 	report.Coverage = float64(success) / float64(f.tests.Len()) * float64(100)
@@ -102,7 +100,10 @@ func (f *Flowcus) synthesize() {
 func (f *Flowcus) process() {
 	job := f.jobs.Pop()
 	if job.(*Revent).Test == nil {
-		f.errors.Push(errors.New("No test function provided"))
+		f.errors.Push(&Error{
+			Date: time.Now().Format("2006-01-2 15:04:05 (MST)"),
+			Err:  errors.New("No test function provided").Error(),
+		})
 		return
 	}
 
@@ -111,7 +112,10 @@ func (f *Flowcus) process() {
 		start := time.Now()
 		id, err := job.(*Revent).Test.(func(*OrderedMap, interface{}) (interface{}, error))(f.tests, job.(*Revent).Data)
 		if err != nil {
-			f.errors.Push(err)
+			f.errors.Push(&Error{
+				Date: time.Now().Format("2006-01-2 15:04:05 (MST)"),
+				Err:  err.Error(),
+			})
 			return
 		}
 
@@ -123,7 +127,10 @@ func (f *Flowcus) process() {
 		}
 
 	default:
-		f.errors.Push(errors.New("Test func got the wrong type. Test func should be of type func(*OrderedMap, interface{})(interface, error)"))
+		f.errors.Push(&Error{
+			Date: time.Now().Format("2006-01-2 15:04:05 (MST)"),
+			Err:  errors.New("Test func got the wrong type. Test func should be of type func(*OrderedMap, interface{})(interface, error)").Error(),
+		})
 	}
 }
 
@@ -167,27 +174,18 @@ func (f *Flowcus) flowcus(sig chan os.Signal) {
 }
 
 func (f *Flowcus) Consumer(fn func(chan<- *Revent)) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
 	f.consumer = fn
 }
 
 func (f *Flowcus) Producer(fn func(chan<- *Event)) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
 	f.producer = fn
 }
 
 func (f *Flowcus) Report() *Report {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
 	return f.report
 }
 
 func (f *Flowcus) ReportAsString() (string, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
 	report, err := json.Marshal(f.report)
 	if err != nil {
 		return "", err
@@ -197,9 +195,6 @@ func (f *Flowcus) ReportAsString() (string, error) {
 }
 
 func (f *Flowcus) ReportToCLI() {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
 	if f.report == nil {
 		return
 	}
@@ -215,9 +210,6 @@ func (f *Flowcus) ReportToCLI() {
 }
 
 func (f *Flowcus) ReportToJSON(filename string) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
 	report, err := json.Marshal(f.report)
 	if err != nil {
 		return err

@@ -4,13 +4,18 @@ import (
 	"time"
 )
 
+type Error struct {
+	Date string
+	Err  string
+}
+
 type Test struct {
 	Id       interface{}
-	Duration time.Duration
 	Label    string
-	Sample   interface{}
 	Success  bool
+	Duration time.Duration
 	Tester   string
+	Sample   interface{}
 }
 
 func (t *Test) Empty() bool {
@@ -18,14 +23,14 @@ func (t *Test) Empty() bool {
 }
 
 type Report struct {
-	Coverage float64
 	Date     string
-	Duration time.Duration
-	Errors   []string
-	Number   int
-	Type     string
 	Version  float64
+	Number   int
+	Coverage float64
+	Duration time.Duration
+	Type     string
 	Tests    []*Test
+	Errors   []*Error
 }
 
 func (r *Report) Empty() bool {
