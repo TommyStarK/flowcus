@@ -84,7 +84,7 @@ func newReport(Type string, report *Fifo) Report {
 			test := new(boxSingleChanReportCase)
 			test.Input = item.(*boxSingleChanTestCase).Input
 
-			for i := len(item.(*boxSingleChanTestCase).Results) - 1; i >= 0; i-- {
+			for i := 0; i < len(item.(*boxSingleChanTestCase).Results); i++ {
 				var t Test = *item.(*boxSingleChanTestCase).Results[i]
 
 				count++
@@ -121,7 +121,7 @@ func newReport(Type string, report *Fifo) Report {
 			test.Input = item.(*boxDualChanTestCase).Input
 			test.Output = item.(*boxDualChanTestCase).Output
 
-			for i := len(item.(*boxDualChanTestCase).Results) - 1; i >= 0; i-- {
+			for i := 0; i < len(item.(*boxDualChanTestCase).Results); i++ {
 				var t Test = *item.(*boxDualChanTestCase).Results[i]
 
 				count++

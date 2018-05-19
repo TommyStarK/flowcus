@@ -54,6 +54,7 @@ func (b *boxSingleChanTestsManager) StartWorkers(input *Input) {
 			task.(tBoxSCTF)(test, *input)
 			test.finished = true
 		}(key, b.WaitGroup, test)
+		<-time.After(100 * time.Microsecond)
 	}
 
 	b.Wait()
@@ -106,6 +107,7 @@ func (b *boxDualChanTestsManager) StartWorkers(input *Input, output *Output) {
 			task.(tBoxDCTF)(test, *input, *output)
 			test.finished = true
 		}(key, b.WaitGroup, test)
+		<-time.After(100 * time.Microsecond)
 	}
 
 	b.Wait()
