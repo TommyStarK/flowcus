@@ -9,26 +9,28 @@ import (
 
 func newTest() *Test {
 	return &Test{
-		&sync.RWMutex{},
 		"",
-		0,
-		[]string{},
-		false,
-		false,
-		[]string{},
 		time.Time{},
+		0,
+		false,
+		false,
+		false,
+		[]string{},
+		[]string{},
+		&sync.RWMutex{},
 	}
 }
 
 type Test struct {
-	*sync.RWMutex
 	Caller   string
-	Duration time.Duration
-	Errors   []string
-	Failed   bool
-	Finished bool
-	Logs     []string
 	Start    time.Time
+	Duration time.Duration
+	failed   bool
+	Finished bool
+	Success  bool
+	Errors   []string
+	Logs     []string
+	*sync.RWMutex
 }
 
 func (t *Test) error(s string) {
@@ -62,17 +64,17 @@ func (t *Test) LogF(format string, args ...interface{}) {
 }
 
 func (t *Test) Fail() {
-	if t.HasFailed() {
+	if t.Failed() {
 		return
 	}
 
 	t.Lock()
 	defer t.Unlock()
-	t.Failed = true
+	t.failed = true
 }
-func (t *Test) HasFailed() bool {
+func (t *Test) Failed() bool {
 	t.RLock()
-	failed := t.Failed
+	failed := t.failed
 	t.RUnlock()
 	return failed
 }

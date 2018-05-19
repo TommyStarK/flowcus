@@ -16,7 +16,7 @@ type BlackBox interface {
 func NewBlackBox(Type string) BlackBox {
 	switch strings.ToLower(Type) {
 	case "equivalency":
-		return _equivalency()
+		return newEquivalency()
 	}
 
 	return nil

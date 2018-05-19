@@ -17,6 +17,8 @@ type Report interface {
 type bboxReport struct {
 	Date     string
 	Duration time.Duration
+	Coverage float64
+	Number   int
 	Cases    []*bboxTestCase
 }
 
@@ -39,16 +41,24 @@ func newReport(Type string, report *Fifo) Report {
 	switch Type {
 	case "bboxReport":
 		r := new(bboxReport)
-		r.Date = time.Now().Format("2006-01-2 15:04:05 (MST)")
+		success, count := 0, 0
+		r.Date = time.Now().Format(FORMAT)
 
 		for report.Len() > 0 {
 			item := report.Pop()
 			for i := 0; i < len(item.(*bboxTestCase).Results); i++ {
+				item.(*bboxTestCase).Results[i].Success = !item.(*bboxTestCase).Results[i].Failed()
+				if item.(*bboxTestCase).Results[i].Success {
+					success++
+				}
 				r.Duration += item.(*bboxTestCase).Results[i].Duration
+				count++
 			}
 			r.Cases = append(r.Cases, item.(*bboxTestCase))
 		}
 
+		r.Number = count
+		r.Coverage = float64(success) / float64(count) * float64(100)
 		return r
 	}
 

@@ -11,7 +11,7 @@ import (
 	. "github.com/TommyStarK/flowcus/internal/fifo"
 )
 
-func _equivalency() *equivalency {
+func newEquivalency() *equivalency {
 	return &equivalency{
 		nil,
 		nil,
@@ -94,7 +94,7 @@ func (e *equivalency) Output(fn tFuncOut) {
 
 func (e *equivalency) RegisterTests(tests ...tBBoxFunc) {
 	if e.bboxManager == nil {
-		e.bboxManager = _bboxManager()
+		e.bboxManager = newBBoxManager()
 	}
 
 	e.SetTasks(tests...)

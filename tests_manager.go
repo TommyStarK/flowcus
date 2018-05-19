@@ -9,7 +9,7 @@ import (
 	. "github.com/TommyStarK/flowcus/internal/reflect"
 )
 
-func _bboxManager() *bboxManager {
+func newBBoxManager() *bboxManager {
 	return &bboxManager{
 		NewFifo(),
 		NewOrderedMap(),
