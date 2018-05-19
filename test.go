@@ -7,7 +7,6 @@ import (
 )
 
 type Test struct {
-	// *sync.RWMutex
 	Caller   string
 	Duration time.Duration
 	Errors   []string
@@ -18,14 +17,10 @@ type Test struct {
 }
 
 func (t *Test) error(s string) {
-	// t.Lock()
-	// defer t.Unlock()
 	t.Errors = append(t.Errors, s)
 }
 
 func (t *Test) log(s string) {
-	// t.Lock()
-	// defer t.Unlock()
 	t.Logs = append(t.Logs, s)
 }
 
@@ -48,8 +43,6 @@ func (t *Test) LogF(format string, args ...interface{}) {
 }
 
 func (t *Test) Fail() {
-	// t.Lock()
-	// defer t.Unlock()
 	t.Failed = true
 }
 

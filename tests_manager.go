@@ -29,7 +29,7 @@ type bboxTestCase struct {
 	Results []*Test
 }
 
-func (b *bboxManager) SetTasks(tasks ...tFunc) {
+func (b *bboxManager) SetTasks(tasks ...tBBoxFunc) {
 	for _, task := range tasks {
 		b.Set(GetEntityName(task), task)
 	}
@@ -45,16 +45,15 @@ func (b *bboxManager) StartWorkers(input *Input, output *Output) {
 		go func(key interface{}, wg *sync.WaitGroup, test *Test) {
 			defer func() {
 				test.Duration = time.Since(test.Start)
-
+				bunch = append(bunch, test)
 				wg.Done()
 			}()
 
 			task := b.Get(key)
 			test.Start = time.Now()
 			test.Caller = GetEntityName(task)
-			task.(tFunc)(test, input, output)
+			task.(tBBoxFunc)(test, input, output)
 			test.Finished = true
-			bunch = append(bunch, test)
 		}(key, b.WaitGroup, &test)
 	}
 

@@ -92,7 +92,7 @@ func (e *equivalency) Output(fn tFuncOut) {
 	e._tFuncOut = fn
 }
 
-func (e *equivalency) RegisterTests(tests ...tFunc) {
+func (e *equivalency) RegisterTests(tests ...tBBoxFunc) {
 	if e.bboxManager == nil {
 		e.bboxManager = _bboxManager()
 	}
