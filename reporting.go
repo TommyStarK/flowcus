@@ -15,8 +15,9 @@ type Report interface {
 }
 
 type bboxReport struct {
-	Date  string
-	Cases []*bboxTestCase
+	Date     string
+	Duration time.Duration
+	Cases    []*bboxTestCase
 }
 
 func (b *bboxReport) ReportToCLI() {
@@ -39,10 +40,15 @@ func newReport(Type string, report *Fifo) Report {
 	case "bboxReport":
 		r := new(bboxReport)
 		r.Date = time.Now().Format("2006-01-2 15:04:05 (MST)")
+
 		for report.Len() > 0 {
 			item := report.Pop()
+			for i := 0; i < len(item.(*bboxTestCase).Results); i++ {
+				r.Duration += item.(*bboxTestCase).Results[i].Duration
+			}
 			r.Cases = append(r.Cases, item.(*bboxTestCase))
 		}
+
 		return r
 	}
 

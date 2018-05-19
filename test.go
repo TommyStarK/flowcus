@@ -3,10 +3,25 @@ package flowcus
 import (
 	"fmt"
 	"runtime"
+	"sync"
 	"time"
 )
 
+func newTest() *Test {
+	return &Test{
+		&sync.RWMutex{},
+		"",
+		0,
+		[]string{},
+		false,
+		false,
+		[]string{},
+		time.Time{},
+	}
+}
+
 type Test struct {
+	*sync.RWMutex
 	Caller   string
 	Duration time.Duration
 	Errors   []string
@@ -17,21 +32,25 @@ type Test struct {
 }
 
 func (t *Test) error(s string) {
+	t.Lock()
+	defer t.Unlock()
 	t.Errors = append(t.Errors, s)
 }
 
 func (t *Test) log(s string) {
+	t.Lock()
+	defer t.Unlock()
 	t.Logs = append(t.Logs, s)
 }
 
 func (t *Test) Error(args ...interface{}) {
-	t.Fail()
 	t.error(fmt.Sprintln(args...))
+	t.Fail()
 }
 
 func (t *Test) ErrorF(format string, args ...interface{}) {
-	t.Fail()
 	t.error(fmt.Sprintf(format, args...))
+	t.Fail()
 }
 
 func (t *Test) Log(args ...interface{}) {
@@ -43,7 +62,19 @@ func (t *Test) LogF(format string, args ...interface{}) {
 }
 
 func (t *Test) Fail() {
+	if t.HasFailed() {
+		return
+	}
+
+	t.Lock()
+	defer t.Unlock()
 	t.Failed = true
+}
+func (t *Test) HasFailed() bool {
+	t.RLock()
+	failed := t.Failed
+	t.RUnlock()
+	return failed
 }
 
 func (t *Test) FailNow() {

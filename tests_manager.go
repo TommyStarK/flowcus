@@ -24,8 +24,8 @@ type bboxManager struct {
 }
 
 type bboxTestCase struct {
-	Input   *Input
-	Output  *Output
+	Input   Input
+	Output  Output
 	Results []*Test
 }
 
@@ -41,7 +41,7 @@ func (b *bboxManager) StartWorkers(input *Input, output *Output) {
 	for _, key := range b.Keys() {
 		b.Add(1)
 
-		var test Test
+		test := newTest()
 		go func(key interface{}, wg *sync.WaitGroup, test *Test) {
 			defer func() {
 				test.Duration = time.Since(test.Start)
@@ -52,11 +52,11 @@ func (b *bboxManager) StartWorkers(input *Input, output *Output) {
 			task := b.Get(key)
 			test.Start = time.Now()
 			test.Caller = GetEntityName(task)
-			task.(tBBoxFunc)(test, input, output)
+			task.(tBBoxFunc)(test, *input, *output)
 			test.Finished = true
-		}(key, b.WaitGroup, &test)
+		}(key, b.WaitGroup, test)
 	}
 
 	b.Wait()
-	b.Push(&bboxTestCase{Input: input, Output: output, Results: bunch})
+	b.Push(&bboxTestCase{Input: *input, Output: *output, Results: bunch})
 }

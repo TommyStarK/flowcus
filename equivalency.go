@@ -76,7 +76,7 @@ func (e *equivalency) loop(sig chan os.Signal) {
 	}
 
 	if e.out.Len() != e.in.Len() {
-		log.Println("size fifo in != size fifo out")
+		log.Println("Number of inputs different from the number of outputs. An equivalence can not be made between two lists containing a different number of elements")
 	}
 
 	for e.in.Len() > 0 || e.out.Len() > 0 {

@@ -29,6 +29,6 @@ Each Contribution is welcomed and encouraged. I do not claim to cover each use c
 
 Implementation examples:
 
-* [Black Box Testing - equivalency](https://github.com/TommyStarK/flowcus/blob/v2/bbox-equivalency.md)
-* [Gray Box Testing](https://github.com/TommyStarK/flowcus/blob/v2/gbox.md)
+* [Black Box Testing - equivalency](https://github.com/TommyStarK/flowcus/blob/v2/docs/bbox-equivalency.md)
+* [Gray Box Testing](https://github.com/TommyStarK/flowcus/blob/v2/docs/gbox.md)
 
