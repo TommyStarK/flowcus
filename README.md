@@ -1,7 +1,6 @@
 # Flowcus
 
-Flowcus is a data processing testing framework implementing various testing patterns such as Black Box Testing, or
-Gray Box Testing.
+Flowcus is an easy to use data flow testing framework to implement Black Box, White Box or Gray Box Testing
 
 ## Context
 
