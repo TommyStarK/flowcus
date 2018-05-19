@@ -39,7 +39,6 @@ func newReport(Type string, report *Fifo) Report {
 	case "bboxReport":
 		r := new(bboxReport)
 		r.Date = time.Now().Format("2006-01-2 15:04:05 (MST)")
-		log.Println(report.Len())
 		for report.Len() > 0 {
 			item := report.Pop()
 			r.Cases = append(r.Cases, item.(*bboxTestCase))
