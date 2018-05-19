@@ -23,78 +23,33 @@ func newEquivalency() *equivalency {
 		nil,
 		make(chan *Input, 1),
 		make(chan *Output, 1),
-		map[int]bool{_in: false, _out: false},
 	}
 }
 
 type equivalency struct {
 	Report
-	*bboxManager
+	*boxDualChanTestsManager
 	*sync.WaitGroup
 	once      uint64
 	in        *Fifo
 	out       *Fifo
-	_tFuncIn  tFuncIn
-	_tFuncOut tFuncOut
+	_tFuncIn  tBoxIF
+	_tFuncOut tBoxOF
 	cin       chan *Input
 	cout      chan *Output
-	watcher   map[int]bool
 }
 
-func (e *equivalency) loop(sig chan os.Signal) {
-	defer func() {
-		if r := recover(); r != nil {
-			log.Println("recover:", r)
-		}
-
-		e.Done()
-	}()
-
-	for !e.watcher[_in] || !e.watcher[_out] {
-		select {
-		case signal := <-sig:
-			panic(signal)
-
-		case input, open := <-e.cin:
-			if open {
-				if input != nil && !input.Empty() {
-					e.in.Push(input)
-				}
-			} else if !open && !e.watcher[_in] {
-				e.watcher[_in] = true
-			}
-
-		case output, open := <-e.cout:
-			if open {
-				if output != nil && !output.Empty() {
-					e.out.Push(output)
-				}
-			} else if !open && !e.watcher[_out] {
-				e.watcher[_out] = true
-			}
-		}
-	}
-
-	if e.out.Len() != e.in.Len() {
-		log.Println("Number of inputs different from the number of outputs. An equivalence can not be made between two lists containing a different number of elements")
-	}
-
-	for e.in.Len() > 0 || e.out.Len() > 0 {
-		e.StartWorkers(e.in.Pop().(*Input), e.out.Pop().(*Output))
-	}
-}
-
-func (e *equivalency) Input(fn tFuncIn) {
+func (e *equivalency) Input(fn tBoxIF) {
 	e._tFuncIn = fn
 }
 
-func (e *equivalency) Output(fn tFuncOut) {
+func (e *equivalency) Output(fn tBoxOF) {
 	e._tFuncOut = fn
 }
 
-func (e *equivalency) RegisterTests(tests ...tBBoxFunc) {
-	if e.bboxManager == nil {
-		e.bboxManager = newBBoxManager()
+func (e *equivalency) RegisterTests(tests ...tBoxDCTF) {
+	if e.boxDualChanTestsManager == nil {
+		e.boxDualChanTestsManager = newBoxDualChanTestsManager()
 	}
 
 	e.SetTasks(tests...)
@@ -119,8 +74,8 @@ func (e *equivalency) ReportToJSON(filename string) error {
 func (e *equivalency) Run() {
 	if once := atomic.LoadUint64(&e.once); once == 1 {
 		log.Fatalln("Error: Run() can be called only once")
-	} else if e.bboxManager == nil {
-		log.Fatalln("You must register at least one test. Test function must have the following signature: func(*Test, *Input, *Output)")
+	} else if e.boxDualChanTestsManager == nil {
+		log.Fatalln("You must register at least one test. Test function must have the following signature: func(*Test, Input, Output)")
 	} else if e._tFuncIn == nil {
 		log.Fatalln("You must register an input")
 	} else if e._tFuncOut == nil {
@@ -135,9 +90,27 @@ func (e *equivalency) Run() {
 	go e._tFuncOut(e.cout)
 
 	e.Add(1)
-	go e.loop(sig)
+	go func(sig chan os.Signal) {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Println("recover:", r)
+			}
+
+			e.Done()
+		}()
+
+		tLoopDualChan(sig, e.cin, e.cout, e.in, e.out)
+
+		if e.out.Len() != e.in.Len() {
+			log.Fatalln("An equivalence can not be made between two lists containing a different number of elements.")
+		}
+
+		for e.in.Len() > 0 {
+			e.StartWorkers(e.in.Pop().(*Input), e.out.Pop().(*Output))
+		}
+	}(sig)
 	e.Wait()
 
 	close(sig)
-	e.Report = newReport("bboxReport", e.bboxManager.Fifo)
+	e.Report = newReport("boxDualChanReport", e.boxDualChanTestsManager.Fifo)
 }

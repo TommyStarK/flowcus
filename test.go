@@ -7,11 +7,23 @@ import (
 	"time"
 )
 
+type TestExported struct {
+	Caller   string
+	Start    time.Time
+	Duration time.Duration
+	Finished bool
+	Skipped  bool
+	Success  bool
+	Errors   []string
+	Logs     []string
+}
+
 func newTest() *Test {
 	return &Test{
 		"",
 		time.Time{},
 		0,
+		false,
 		false,
 		false,
 		false,
@@ -22,27 +34,34 @@ func newTest() *Test {
 }
 
 type Test struct {
-	Caller   string
-	Start    time.Time
-	Duration time.Duration
+	caller   string
+	start    time.Time
+	duration time.Duration
 	failed   bool
-	Finished bool
-	Success  bool
-	Errors   []string
-	Logs     []string
+	finished bool
+	skipped  bool
+	success  bool
+	errors   []string
+	logs     []string
 	*sync.RWMutex
 }
 
 func (t *Test) error(s string) {
 	t.Lock()
 	defer t.Unlock()
-	t.Errors = append(t.Errors, s)
+	t.errors = append(t.errors, s)
 }
 
 func (t *Test) log(s string) {
 	t.Lock()
 	defer t.Unlock()
-	t.Logs = append(t.Logs, s)
+	t.logs = append(t.logs, s)
+}
+
+func (t *Test) skip() {
+	t.Lock()
+	defer t.Unlock()
+	t.skipped = true
 }
 
 func (t *Test) Error(args ...interface{}) {
@@ -81,7 +100,7 @@ func (t *Test) Failed() bool {
 
 func (t *Test) FailNow() {
 	t.Fail()
-	t.Finished = true
+	t.finished = true
 	runtime.Goexit()
 }
 
@@ -93,4 +112,27 @@ func (t *Test) Fatal(args ...interface{}) {
 func (t *Test) FatalF(format string, args ...interface{}) {
 	t.ErrorF(format, args...)
 	t.FailNow()
+}
+
+func (t *Test) Skip(args ...interface{}) {
+	t.Log(args...)
+	t.skip()
+}
+
+func (t *Test) SkipF(format string, args ...interface{}) {
+	t.LogF(format, args...)
+	t.skip()
+}
+
+func (t *Test) SkipNow() {
+	t.skip()
+	t.finished = true
+	runtime.Goexit()
+}
+
+func (t *Test) Skipped() bool {
+	t.RLock()
+	skipped := t.skipped
+	t.RUnlock()
+	return skipped
 }
