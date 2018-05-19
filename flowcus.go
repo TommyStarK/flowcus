@@ -110,6 +110,11 @@ func (f *Flowcus) process() {
 	switch job.(*Revent).Test.(type) {
 	case func(*OrderedMap, interface{}) (interface{}, error):
 		start := time.Now()
+
+		//
+		// TODO: handle case where the users was able to retrieve the id but one of his tests failed so an id and an error have
+		// been returned
+		//
 		id, err := job.(*Revent).Test.(func(*OrderedMap, interface{}) (interface{}, error))(f.tests, job.(*Revent).Data)
 		if err != nil {
 			f.errors.Push(&Error{
