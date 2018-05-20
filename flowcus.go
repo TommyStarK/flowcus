@@ -5,7 +5,7 @@ const (
 	VERSION float64 = 0.5
 )
 
-func NewEploratoryBox() Exploratory {
+func NewExploratoryBox() Exploratory {
 	return newExploratory()
 }
 
