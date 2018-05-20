@@ -99,10 +99,10 @@ func (n *nonlinear) Run() {
 			n.wg.Done()
 		}()
 
-		LoopDualChan(sig, n.cin, n.cout, n.in, n.out)
-
 		var inputs []Input
 		var outputs []Output
+
+		LoopDualChan(sig, n.cin, n.cout, n.in, n.out)
 
 		for n.in.Len() > 0 {
 			inputs = append(inputs, *n.in.Pop().(*Input))
