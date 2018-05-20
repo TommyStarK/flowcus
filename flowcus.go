@@ -2,7 +2,7 @@ package flowcus
 
 const (
 	FORMAT  string  = "2006-01-2 15:04:05 (MST)"
-	VERSION float64 = 0.1
+	VERSION float64 = 0.5
 )
 
 func NewEploratoryBox() Exploratory {

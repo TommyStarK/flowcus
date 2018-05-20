@@ -75,18 +75,19 @@ func (l *linear) ReportToJSON(filename string) error {
 
 func (l *linear) Run() {
 	if once := atomic.LoadUint64(&l.once); once == 1 {
-		log.Fatalln("Error: Run() can be called only once")
+		log.Println(ISRUNNING)
+		return
 	} else if l.manager == nil {
-		log.Fatalln("You must register at least one test. Test function must have the following signature: func(*Test, Input, Output)")
+		log.Fatalln(NO_TEST_SET, BOXLTF)
 	} else if l._tFuncIn == nil {
-		log.Fatalln("You must register an input")
+		log.Fatalln(NO_INPUT_SET)
 	} else if l._tFuncOut == nil {
-		log.Fatalln("You must register an output")
+		log.Fatalln(NO_OUTPUT_SET)
 	}
 
 	atomic.AddUint64(&l.once, 1)
-	sig := make(chan os.Signal, 2)
-	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
+	sigchan := make(chan os.Signal, 2)
+	signal.Notify(sigchan, syscall.SIGINT, syscall.SIGTERM)
 
 	go l._tFuncIn(l.cin)
 	go l._tFuncOut(l.cout)
@@ -98,7 +99,7 @@ func (l *linear) Run() {
 				switch r.(type) {
 				case syscall.Signal:
 					if r.(syscall.Signal) == syscall.SIGINT {
-						log.Printf("Flowcus: Program interupted by the user (ctrl+c)\n")
+						log.Println(CTRLC)
 					}
 				default:
 					panic(errors.New(fmt.Sprintf("[Flowcus] %s", r)))
@@ -111,15 +112,15 @@ func (l *linear) Run() {
 		LoopDualChan(sig, l.cin, l.cout, l.in, l.out)
 
 		if l.out.Len() != l.in.Len() {
-			log.Fatalln("An equivalence can not be made between two lists containing a different number of elements.")
+			log.Fatalln("Different number of inputs/outputs. LinearBox exiting...")
 		}
 
 		for l.in.Len() > 0 && l.out.Len() > 0 {
 			l.manager.StartWorkers(l.in.Pop().(*Input), l.out.Pop().(*Output))
 		}
-	}(sig)
-	l.wg.Wait()
+	}(sigchan)
 
-	close(sig)
+	l.wg.Wait()
+	close(sigchan)
 	l.Report = NewReport(l.manager)
 }

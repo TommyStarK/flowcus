@@ -75,18 +75,19 @@ func (n *nonlinear) ReportToJSON(filename string) error {
 
 func (n *nonlinear) Run() {
 	if once := atomic.LoadUint64(&n.once); once == 1 {
-		log.Fatalln("Error: Run() can be called only once")
+		log.Println(ISRUNNING)
+		return
 	} else if n.manager == nil {
-		log.Fatalln("You must register at least one test. Test function must have the following signature: func(*Test, Input, Output)")
+		log.Fatalln(NO_TEST_SET, BOXNLTF)
 	} else if n._tFuncIn == nil {
-		log.Fatalln("You must register an input")
+		log.Fatalln(NO_INPUT_SET)
 	} else if n._tFuncOut == nil {
-		log.Fatalln("You must register an output")
+		log.Fatalln(NO_OUTPUT_SET)
 	}
 
 	atomic.AddUint64(&n.once, 1)
-	sig := make(chan os.Signal, 2)
-	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
+	sigchan := make(chan os.Signal, 2)
+	signal.Notify(sigchan, syscall.SIGINT, syscall.SIGTERM)
 
 	go n._tFuncIn(n.cin)
 	go n._tFuncOut(n.cout)
@@ -98,7 +99,7 @@ func (n *nonlinear) Run() {
 				switch r.(type) {
 				case syscall.Signal:
 					if r.(syscall.Signal) == syscall.SIGINT {
-						log.Printf("Flowcus: Program interupted by the user (ctrl+c)\n")
+						log.Printf(CTRLC)
 					}
 				default:
 					panic(errors.New(fmt.Sprintf("[Flowcus] %s", r)))
@@ -122,9 +123,9 @@ func (n *nonlinear) Run() {
 		}
 
 		n.manager.StartWorkers(inputs, outputs)
-	}(sig)
-	n.wg.Wait()
+	}(sigchan)
 
-	close(sig)
+	n.wg.Wait()
+	close(sigchan)
 	n.Report = NewReport(n.manager)
 }
