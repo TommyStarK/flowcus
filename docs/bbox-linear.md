@@ -4,32 +4,30 @@
 
     package main
 
-    import (
-        "log"
-        "time"
+    import . "github.com/TommyStarK/flowcus"
 
-        . "github.com/TommyStarK/flowcus"
-    )
+    var inputs []int = []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+    var outputs []int = []int{0, 1, 2, 3, 4, 0, 6, 7, 8, 9}
 
     func input(c chan<- *Input) {
         defer func() {
             close(c)
         }()
 
-        log.Println("sending input")
-
-        for index := 0; index < 10; index++ {
-            c <- &Input{
-                Data:     index,
-                Expected: index,
-                Label:    "should succeed",
+        for index := 0; index < len(inputs); index++ {
+            if index == 5 {
+                c <- &Input{
+                    Data:     inputs[index],
+                    Expected: inputs[index],
+                    Label:    "should fail",
+                }
+            } else {
+                c <- &Input{
+                    Data:     inputs[index],
+                    Expected: inputs[index],
+                    Label:    "should succeed",
+                }
             }
-        }
-
-        c <- &Input{
-            Data:     12,
-            Expected: 12,
-            Label:    "should fail",
         }
     }
 
@@ -38,17 +36,10 @@
             close(c)
         }()
 
-        log.Println("sending output")
-        time.Sleep(2 * time.Second)
-        for index := 0; index < 10; index++ {
-            time.Sleep(300 * time.Millisecond)
+        for index := 0; index < len(outputs); index++ {
             c <- &Output{
-                Data: index,
+                Data: outputs[index],
             }
-        }
-
-        c <- &Output{
-            Data: 11,
         }
     }
 
@@ -67,6 +58,8 @@
 
         if i.Expected.(int) != o.Data.(int) {
             t.Error("expected and ouput should be equal")
+        } else {
+            t.Log("output is as exepected")
         }
     }
 
@@ -76,6 +69,7 @@
         f.Output(output)
         f.RegisterTests(test)
         f.Run()
+        f.ReportToCLI()
         f.ReportToJSON("equivalency.json")
     }
 ```

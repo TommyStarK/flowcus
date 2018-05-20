@@ -12,30 +12,30 @@
         }()
 
         c <- &Input{
-            Data:  map[int]int{2: 2},
+            Data: map[int]int{2: 2},
         }
 
         c <- &Input{
-            Data:  true,
+            Data: true,
         }
 
         c <- &Input{
-            Data:  "data",
+            Data: "data",
         }
 
         c <- &Input{
-            Data:  42,
+            Data: 42,
         }
     }
 
     func testA(t *Test, i Input) {
         switch i.Data.(type) {
         case int:
-            t.Log("good type")
+            t.Log("wanted type received")
         case string:
-            t.Error("expected int received string")
+            t.Error("wanted int received string")
         case bool:
-            t.Error("exepected int received bool")
+            t.Error("wanted int received bool")
         default:
             t.Fail()
             t.SkipNow()
@@ -51,10 +51,11 @@
     }
 
     func main() {
-        e := NewExploratoryBox()
+        e := NewEploratoryBox()
         e.Input(input)
         e.RegisterTests(testA, testB, testC)
         e.Run()
+        e.ReportToCLI()
         e.ReportToJSON("exploratory.json")
     }
 

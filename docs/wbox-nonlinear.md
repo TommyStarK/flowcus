@@ -3,18 +3,12 @@
 ```go
     package main
 
-    import (
-        "log"
-
-        . "github.com/TommyStarK/flowcus"
-    )
+    import . "github.com/TommyStarK/flowcus"
 
     func input(c chan<- *Input) {
         defer func() {
             close(c)
         }()
-
-        log.Println("sending input")
 
         for index := 0; index < 10; index++ {
             c <- &Input{
