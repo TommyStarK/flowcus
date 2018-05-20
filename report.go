@@ -164,6 +164,7 @@ func (b *exploratoryBoxReport) ReportToCLI() {
 		for _, t := range c.Results {
 			fmt.Printf("%+v", t)
 		}
+		fmt.Printf("\n")
 	}
 }
 

@@ -59,7 +59,8 @@ func (l *linear) RegisterTests(tests ...BoxLTF) {
 
 func (l *linear) ReportToCLI() {
 	if l.Report == nil {
-		log.Fatalln("Unexpected error occurred. Report is nil")
+		log.Println(NO_REPORT)
+		return
 	}
 
 	l.Report.ReportToCLI()
@@ -67,7 +68,7 @@ func (l *linear) ReportToCLI() {
 
 func (l *linear) ReportToJSON(filename string) error {
 	if l.Report == nil {
-		log.Fatalln("Unexpected error occurred. Report is nil")
+		return errors.New(NO_REPORT)
 	}
 
 	return l.Report.ReportToJSON(filename)
@@ -78,11 +79,14 @@ func (l *linear) Run() {
 		log.Println(ISRUNNING)
 		return
 	} else if l.manager == nil {
-		log.Fatalln(NO_TEST_SET, BOXLTF)
+		log.Println(NO_TEST_SET, BOXLTF)
+		return
 	} else if l._tFuncIn == nil {
-		log.Fatalln(NO_INPUT_SET)
+		log.Println(NO_INPUT_SET)
+		return
 	} else if l._tFuncOut == nil {
-		log.Fatalln(NO_OUTPUT_SET)
+		log.Println(NO_OUTPUT_SET)
+		return
 	}
 
 	atomic.AddUint64(&l.once, 1)
@@ -112,7 +116,8 @@ func (l *linear) Run() {
 		LoopDualChan(sig, l.cin, l.cout, l.in, l.out)
 
 		if l.out.Len() != l.in.Len() {
-			log.Fatalln("Different number of inputs/outputs. LinearBox exiting...")
+			log.Println("Different number of inputs/outputs. LinearBox exiting...")
+			return
 		}
 
 		for l.in.Len() > 0 && l.out.Len() > 0 {

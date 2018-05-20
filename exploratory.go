@@ -49,7 +49,8 @@ func (e *exploratory) RegisterTests(tests ...BoxETF) {
 
 func (e *exploratory) ReportToCLI() {
 	if e.Report == nil {
-		log.Fatalln("Unexpected error occurred. Report is nil")
+		log.Println(NO_REPORT)
+		return
 	}
 
 	e.Report.ReportToCLI()
@@ -57,7 +58,7 @@ func (e *exploratory) ReportToCLI() {
 
 func (e *exploratory) ReportToJSON(filename string) error {
 	if e.Report == nil {
-		log.Fatalln("Unexpected error occurred. Report is nil")
+		return errors.New(NO_REPORT)
 	}
 
 	return e.Report.ReportToJSON(filename)
@@ -68,9 +69,11 @@ func (e *exploratory) Run() {
 		log.Println(ISRUNNING)
 		return
 	} else if e.manager == nil {
-		log.Fatalln(NO_TEST_SET, BOXETF)
+		log.Println(NO_TEST_SET, BOXETF)
+		return
 	} else if e._tFuncIn == nil {
-		log.Fatalln(NO_INPUT_SET)
+		log.Println(NO_INPUT_SET)
+		return
 	}
 
 	atomic.AddUint64(&e.once, 1)

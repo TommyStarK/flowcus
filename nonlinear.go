@@ -59,7 +59,8 @@ func (n *nonlinear) RegisterTests(tests ...BoxNLTF) {
 
 func (n *nonlinear) ReportToCLI() {
 	if n.Report == nil {
-		log.Fatalln("Unexpected error occurred. Report is nil")
+		log.Println(NO_REPORT)
+		return
 	}
 
 	n.Report.ReportToCLI()
@@ -67,7 +68,7 @@ func (n *nonlinear) ReportToCLI() {
 
 func (n *nonlinear) ReportToJSON(filename string) error {
 	if n.Report == nil {
-		log.Fatalln("Unexpected error occurred. Report is nil")
+		return errors.New(NO_REPORT)
 	}
 
 	return n.Report.ReportToJSON(filename)
@@ -78,11 +79,14 @@ func (n *nonlinear) Run() {
 		log.Println(ISRUNNING)
 		return
 	} else if n.manager == nil {
-		log.Fatalln(NO_TEST_SET, BOXNLTF)
+		log.Println(NO_TEST_SET, BOXNLTF)
+		return
 	} else if n._tFuncIn == nil {
-		log.Fatalln(NO_INPUT_SET)
+		log.Println(NO_INPUT_SET)
+		return
 	} else if n._tFuncOut == nil {
-		log.Fatalln(NO_OUTPUT_SET)
+		log.Println(NO_OUTPUT_SET)
+		return
 	}
 
 	atomic.AddUint64(&n.once, 1)

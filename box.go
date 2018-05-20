@@ -19,6 +19,7 @@ const (
 	ISRUNNING     string = "Box is already running or tests have already been run"
 	NO_INPUT_SET  string = "You must register an input function. Input function must have the following signature: func(chan<- *Input)"
 	NO_OUTPUT_SET string = "You must register an ouput function. Ouput function must have the following signature: func(chan<- *Ouput)"
+	NO_REPORT     string = "Flowcus cannot synthesize a report"
 	NO_TEST_SET   string = "You must register at least one test. Test function must have the following signature: "
 )
 
