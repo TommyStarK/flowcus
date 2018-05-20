@@ -72,7 +72,7 @@ func (b *boxDualChanReport) ReportToJSON(filename string) error {
 }
 
 // Find a proper, duplicate code
-func newReport(Type string, report *Fifo) Report {
+func NewReport(Type string, report *Fifo) Report {
 	switch Type {
 	case "boxSingleChanReport":
 		r := new(boxSingleChanReport)

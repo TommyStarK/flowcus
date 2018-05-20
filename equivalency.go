@@ -33,23 +33,23 @@ type equivalency struct {
 	once      uint64
 	in        *Fifo
 	out       *Fifo
-	_tFuncIn  tBoxIF
-	_tFuncOut tBoxOF
+	_tFuncIn  BoxIF
+	_tFuncOut BoxOF
 	cin       chan *Input
 	cout      chan *Output
 }
 
-func (e *equivalency) Input(fn tBoxIF) {
+func (e *equivalency) Input(fn BoxIF) {
 	e._tFuncIn = fn
 }
 
-func (e *equivalency) Output(fn tBoxOF) {
+func (e *equivalency) Output(fn BoxOF) {
 	e._tFuncOut = fn
 }
 
-func (e *equivalency) RegisterTests(tests ...tBoxDCTF) {
+func (e *equivalency) RegisterTests(tests ...BoxDCTF) {
 	if e.boxDualChanTestsManager == nil {
-		e.boxDualChanTestsManager = newBoxDualChanTestsManager()
+		e.boxDualChanTestsManager = NewBoxDualChanTestsManager()
 	}
 
 	e.SetTasks(tests...)
@@ -99,7 +99,7 @@ func (e *equivalency) Run() {
 			e.Done()
 		}()
 
-		tLoopDualChan(sig, e.cin, e.cout, e.in, e.out)
+		LoopDualChan(sig, e.cin, e.cout, e.in, e.out)
 
 		if e.out.Len() != e.in.Len() {
 			log.Fatalln("An equivalence can not be made between two lists containing a different number of elements.")
@@ -112,5 +112,5 @@ func (e *equivalency) Run() {
 	e.Wait()
 
 	close(sig)
-	e.Report = newReport("boxDualChanReport", e.boxDualChanTestsManager.Fifo)
+	e.Report = NewReport("boxDualChanReport", e.boxDualChanTestsManager.Fifo)
 }

@@ -9,7 +9,7 @@ import (
 	. "github.com/TommyStarK/flowcus/internal/reflect"
 )
 
-func newBoxSingleChanTestsManager() *boxSingleChanTestsManager {
+func NewBoxSingleChanTestsManager() *boxSingleChanTestsManager {
 	return &boxSingleChanTestsManager{
 		NewFifo(),
 		NewOrderedMap(),
@@ -28,7 +28,7 @@ type boxSingleChanTestsManager struct {
 	*sync.WaitGroup
 }
 
-func (b *boxSingleChanTestsManager) SetTasks(tasks ...tBoxSCTF) {
+func (b *boxSingleChanTestsManager) SetTasks(tasks ...BoxSCTF) {
 	for _, task := range tasks {
 		b.Set(GetEntityName(task), task)
 	}
@@ -40,7 +40,7 @@ func (b *boxSingleChanTestsManager) StartWorkers(input *Input) {
 	for _, key := range b.Keys() {
 		b.Add(1)
 
-		test := newTest()
+		test := NewTest()
 		go func(key interface{}, wg *sync.WaitGroup, test *Test) {
 			defer func() {
 				test.duration = time.Since(test.start)
@@ -51,7 +51,7 @@ func (b *boxSingleChanTestsManager) StartWorkers(input *Input) {
 			task := b.Get(key)
 			test.start = time.Now()
 			test.caller = GetEntityName(task)
-			task.(tBoxSCTF)(test, *input)
+			task.(BoxSCTF)(test, *input)
 			test.finished = true
 		}(key, b.WaitGroup, test)
 		<-time.After(100 * time.Microsecond)
@@ -61,7 +61,7 @@ func (b *boxSingleChanTestsManager) StartWorkers(input *Input) {
 	b.Push(&boxSingleChanTestCase{Input: *input, Results: bunch})
 }
 
-func newBoxDualChanTestsManager() *boxDualChanTestsManager {
+func NewBoxDualChanTestsManager() *boxDualChanTestsManager {
 	return &boxDualChanTestsManager{
 		NewFifo(),
 		NewOrderedMap(),
@@ -81,7 +81,7 @@ type boxDualChanTestsManager struct {
 	*sync.WaitGroup
 }
 
-func (b *boxDualChanTestsManager) SetTasks(tasks ...tBoxDCTF) {
+func (b *boxDualChanTestsManager) SetTasks(tasks ...BoxDCTF) {
 	for _, task := range tasks {
 		b.Set(GetEntityName(task), task)
 	}
@@ -93,7 +93,7 @@ func (b *boxDualChanTestsManager) StartWorkers(input *Input, output *Output) {
 	for _, key := range b.Keys() {
 		b.Add(1)
 
-		test := newTest()
+		test := NewTest()
 		go func(key interface{}, wg *sync.WaitGroup, test *Test) {
 			defer func() {
 				test.duration = time.Since(test.start)
@@ -104,7 +104,7 @@ func (b *boxDualChanTestsManager) StartWorkers(input *Input, output *Output) {
 			task := b.Get(key)
 			test.start = time.Now()
 			test.caller = GetEntityName(task)
-			task.(tBoxDCTF)(test, *input, *output)
+			task.(BoxDCTF)(test, *input, *output)
 			test.finished = true
 		}(key, b.WaitGroup, test)
 		<-time.After(100 * time.Microsecond)

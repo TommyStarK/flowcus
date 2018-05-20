@@ -29,17 +29,17 @@ type exploratory struct {
 	*sync.WaitGroup
 	once     uint64
 	in       *Fifo
-	_tFuncIn tBoxIF
+	_tFuncIn BoxIF
 	cin      chan *Input
 }
 
-func (e *exploratory) Input(fn tBoxIF) {
+func (e *exploratory) Input(fn BoxIF) {
 	e._tFuncIn = fn
 }
 
-func (e *exploratory) RegisterTests(tests ...tBoxSCTF) {
+func (e *exploratory) RegisterTests(tests ...BoxSCTF) {
 	if e.boxSingleChanTestsManager == nil {
-		e.boxSingleChanTestsManager = newBoxSingleChanTestsManager()
+		e.boxSingleChanTestsManager = NewBoxSingleChanTestsManager()
 	}
 
 	e.SetTasks(tests...)
@@ -86,7 +86,7 @@ func (e *exploratory) Run() {
 			e.Done()
 		}()
 
-		tLoopSingleChan(sig, e.cin, e.in)
+		LoopSingleChan(sig, e.cin, e.in)
 
 		for e.in.Len() > 0 {
 			e.StartWorkers(e.in.Pop().(*Input))
@@ -95,5 +95,5 @@ func (e *exploratory) Run() {
 	e.Wait()
 
 	close(sig)
-	e.Report = newReport("boxSingleChanReport", e.boxSingleChanTestsManager.Fifo)
+	e.Report = NewReport("boxSingleChanReport", e.boxSingleChanTestsManager.Fifo)
 }

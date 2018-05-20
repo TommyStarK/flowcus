@@ -18,7 +18,7 @@ type TestExported struct {
 	Logs     []string
 }
 
-func newTest() *Test {
+func NewTest() *Test {
 	return &Test{
 		"",
 		time.Time{},

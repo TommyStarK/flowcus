@@ -11,29 +11,29 @@ const (
 	_out
 )
 
-type tBoxIF func(chan<- *Input)
-type tBoxOF func(chan<- *Output)
-type tBoxSCTF func(*Test, Input)
-type tBoxDCTF func(*Test, Input, Output)
+type BoxIF func(chan<- *Input)
+type BoxOF func(chan<- *Output)
+type BoxSCTF func(*Test, Input)
+type BoxDCTF func(*Test, Input, Output)
 
 type BoxSingleChan interface {
-	Input(tBoxIF)
-	RegisterTests(...tBoxSCTF)
+	Input(BoxIF)
+	RegisterTests(...BoxSCTF)
 	ReportToCLI()
 	ReportToJSON(string) error
 	Run()
 }
 
 type BoxDualChan interface {
-	Input(tBoxIF)
-	Output(tBoxOF)
-	RegisterTests(...tBoxDCTF)
+	Input(BoxIF)
+	Output(BoxOF)
+	RegisterTests(...BoxDCTF)
 	ReportToCLI()
 	ReportToJSON(string) error
 	Run()
 }
 
-func tLoopSingleChan(sig chan os.Signal, cin chan *Input, in *Fifo) {
+func LoopSingleChan(sig chan os.Signal, cin chan *Input, in *Fifo) {
 Loop:
 	for {
 		select {
@@ -52,7 +52,7 @@ Loop:
 	}
 }
 
-func tLoopDualChan(sig chan os.Signal, cin chan *Input, cout chan *Output, in, out *Fifo) {
+func LoopDualChan(sig chan os.Signal, cin chan *Input, cout chan *Output, in, out *Fifo) {
 	watcher := map[int]bool{_in: false, _out: false}
 
 	for !watcher[_in] || !watcher[_out] {
