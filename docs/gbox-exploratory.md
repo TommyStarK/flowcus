@@ -51,6 +51,7 @@
 
     func testC(t *Test, i Input) {
         t.Log("func C...")
+        panic("test panic from func (testC)")
     }
 
     func main() {
