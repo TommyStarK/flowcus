@@ -1,12 +1,13 @@
 package flowcus
 
 import (
+	"reflect"
+	"runtime"
 	"sync"
 	"time"
 
 	. "github.com/TommyStarK/flowcus/internal/fifo"
 	. "github.com/TommyStarK/flowcus/internal/ordered_map"
-	. "github.com/TommyStarK/flowcus/internal/reflect"
 )
 
 func NewBoxSingleChanTestsManager() *boxSingleChanTestsManager {
@@ -30,7 +31,7 @@ type boxSingleChanTestsManager struct {
 
 func (b *boxSingleChanTestsManager) SetTasks(tasks ...BoxSCTF) {
 	for _, task := range tasks {
-		b.Set(GetEntityName(task), task)
+		b.Set(runtime.FuncForPC(reflect.ValueOf(task).Pointer()).Name(), task)
 	}
 }
 
@@ -50,7 +51,7 @@ func (b *boxSingleChanTestsManager) StartWorkers(input *Input) {
 
 			task := b.Get(key)
 			test.start = time.Now()
-			test.caller = GetEntityName(task)
+			test.caller = runtime.FuncForPC(reflect.ValueOf(task).Pointer()).Name()
 			task.(BoxSCTF)(test, *input)
 			test.finished = true
 		}(key, b.WaitGroup, test)
@@ -83,7 +84,7 @@ type boxDualChanTestsManager struct {
 
 func (b *boxDualChanTestsManager) SetTasks(tasks ...BoxDCTF) {
 	for _, task := range tasks {
-		b.Set(GetEntityName(task), task)
+		b.Set(runtime.FuncForPC(reflect.ValueOf(task).Pointer()).Name(), task)
 	}
 }
 
@@ -103,7 +104,7 @@ func (b *boxDualChanTestsManager) StartWorkers(input *Input, output *Output) {
 
 			task := b.Get(key)
 			test.start = time.Now()
-			test.caller = GetEntityName(task)
+			test.caller = runtime.FuncForPC(reflect.ValueOf(task).Pointer()).Name()
 			task.(BoxDCTF)(test, *input, *output)
 			test.finished = true
 		}(key, b.WaitGroup, test)
