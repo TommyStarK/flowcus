@@ -1,6 +1,8 @@
 package flowcus
 
 import (
+	"errors"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -80,7 +82,14 @@ func (e *exploratory) Run() {
 	go func(sig chan os.Signal) {
 		defer func() {
 			if r := recover(); r != nil {
-				log.Println("recover:", r)
+				switch r.(type) {
+				case syscall.Signal:
+					if r.(syscall.Signal) == syscall.SIGINT {
+						log.Printf("Flowcus: Program interupted by the user (ctrl+c)\n")
+					}
+				default:
+					panic(errors.New(fmt.Sprintf("[Flowcus] %s", r)))
+				}
 			}
 
 			e.Done()

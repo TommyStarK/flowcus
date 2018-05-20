@@ -48,6 +48,15 @@ func (e *exploratoryBoxTestsManager) StartWorkers(input *Input) {
 		go func(key interface{}, wg *sync.WaitGroup, test *Test) {
 			defer func() {
 				test.duration = time.Since(test.start)
+				if r := recover(); r != nil {
+					switch r.(type) {
+					case runtime.Error:
+						panic(r)
+					default:
+						test.Fail()
+						test.Error(r)
+					}
+				}
 				bunch = append(bunch, test)
 				wg.Done()
 			}()
@@ -104,6 +113,15 @@ func (l *linearBoxTestsManager) StartWorkers(input *Input, output *Output) {
 		go func(key interface{}, wg *sync.WaitGroup, test *Test) {
 			defer func() {
 				test.duration = time.Since(test.start)
+				if r := recover(); r != nil {
+					switch r.(type) {
+					case runtime.Error:
+						panic(r)
+					default:
+						test.Fail()
+						test.Error(r)
+					}
+				}
 				bunch = append(bunch, test)
 				wg.Done()
 			}()
@@ -160,6 +178,15 @@ func (n *nonlinearBoxTestsManager) StartWorkers(inputs []Input, outputs []Output
 		go func(key interface{}, wg *sync.WaitGroup, test *Test) {
 			defer func() {
 				test.duration = time.Since(test.start)
+				if r := recover(); r != nil {
+					switch r.(type) {
+					case runtime.Error:
+						panic(r)
+					default:
+						test.Fail()
+						test.Error(r)
+					}
+				}
 				bunch = append(bunch, test)
 				wg.Done()
 			}()
