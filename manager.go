@@ -10,6 +10,21 @@ import (
 	. "github.com/TommyStarK/flowcus/internal/ordered_map"
 )
 
+func acquireTest(wg *sync.WaitGroup, test *Test, bunch *[]*Test) {
+	test.duration = time.Since(test.start)
+	if r := recover(); r != nil {
+		switch r.(type) {
+		case runtime.Error:
+			panic(r)
+		default:
+			test.Fail()
+			test.Error(r)
+		}
+	}
+	*bunch = append(*bunch, test)
+	wg.Done()
+}
+
 //
 // Exploratory Box Tests Manager
 //
@@ -46,20 +61,7 @@ func (e *exploratoryBoxTestsManager) StartWorkers(input *Input) {
 
 		test := NewTest()
 		go func(key interface{}, wg *sync.WaitGroup, test *Test) {
-			defer func() {
-				test.duration = time.Since(test.start)
-				if r := recover(); r != nil {
-					switch r.(type) {
-					case runtime.Error:
-						panic(r)
-					default:
-						test.Fail()
-						test.Error(r)
-					}
-				}
-				bunch = append(bunch, test)
-				wg.Done()
-			}()
+			defer acquireTest(wg, test, &bunch)
 
 			task := e.tests.Get(key)
 			test.start = time.Now()
@@ -111,20 +113,7 @@ func (l *linearBoxTestsManager) StartWorkers(input *Input, output *Output) {
 
 		test := NewTest()
 		go func(key interface{}, wg *sync.WaitGroup, test *Test) {
-			defer func() {
-				test.duration = time.Since(test.start)
-				if r := recover(); r != nil {
-					switch r.(type) {
-					case runtime.Error:
-						panic(r)
-					default:
-						test.Fail()
-						test.Error(r)
-					}
-				}
-				bunch = append(bunch, test)
-				wg.Done()
-			}()
+			defer acquireTest(wg, test, &bunch)
 
 			task := l.tests.Get(key)
 			test.start = time.Now()
@@ -176,20 +165,7 @@ func (n *nonlinearBoxTestsManager) StartWorkers(inputs []Input, outputs []Output
 
 		test := NewTest()
 		go func(key interface{}, wg *sync.WaitGroup, test *Test) {
-			defer func() {
-				test.duration = time.Since(test.start)
-				if r := recover(); r != nil {
-					switch r.(type) {
-					case runtime.Error:
-						panic(r)
-					default:
-						test.Fail()
-						test.Error(r)
-					}
-				}
-				bunch = append(bunch, test)
-				wg.Done()
-			}()
+			defer acquireTest(wg, test, &bunch)
 
 			task := n.tests.Get(key)
 			test.start = time.Now()
