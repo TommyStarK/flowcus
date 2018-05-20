@@ -6,8 +6,6 @@ import (
 	"io/ioutil"
 	"log"
 	"time"
-
-	. "github.com/TommyStarK/flowcus/internal/fifo"
 )
 
 func reportToJSON(filename string, data interface{}) error {
@@ -24,20 +22,20 @@ type Report interface {
 	ReportToJSON(string) error
 }
 
-type boxSingleChanReportCase struct {
+type exploratoryBoxReportCase struct {
 	Input   Input
 	Results []TestExported
 }
 
-type boxSingleChanReport struct {
+type exploratoryBoxReport struct {
 	Date     string
 	Duration time.Duration
 	Coverage float64
 	Number   int
-	Cases    []*boxSingleChanReportCase
+	Cases    []*exploratoryBoxReportCase
 }
 
-func (b *boxSingleChanReport) ReportToCLI() {
+func (b *exploratoryBoxReport) ReportToCLI() {
 	fmt.Printf("Flowcus: Report [%s]\n", b.Date)
 	fmt.Printf("Tests took: %s ending with %g%% of success for a total of %d tests performed.\n", b.Duration.String(), b.Coverage, b.Number)
 	for i, c := range b.Cases {
@@ -49,47 +47,47 @@ func (b *boxSingleChanReport) ReportToCLI() {
 	}
 }
 
-func (b *boxSingleChanReport) ReportToJSON(filename string) error {
+func (b *exploratoryBoxReport) ReportToJSON(filename string) error {
 	return reportToJSON(filename, b)
 }
 
-type boxDualChanReportCase struct {
+type linearBoxReportCase struct {
 	Input   Input
 	Output  Output
 	Results []TestExported
 }
 
-type boxDualChanReport struct {
+type linearBoxReport struct {
 	Date     string
 	Duration time.Duration
 	Coverage float64
 	Number   int
-	Cases    []*boxDualChanReportCase
+	Cases    []*linearBoxReportCase
 }
 
-func (b *boxDualChanReport) ReportToCLI() {
+func (b *linearBoxReport) ReportToCLI() {
 	log.Println("Reporting to CLI...")
 }
 
-func (b *boxDualChanReport) ReportToJSON(filename string) error {
+func (b *linearBoxReport) ReportToJSON(filename string) error {
 	return reportToJSON(filename, b)
 }
 
 // Find a proper way, duplicate code
-func NewReport(Type string, report *Fifo) Report {
-	switch Type {
-	case "boxSingleChanReport":
-		r := new(boxSingleChanReport)
+func NewReport(manager interface{}) Report {
+	switch manager.(type) {
+	case *exploratoryBoxTestsManager:
+		r := new(exploratoryBoxReport)
 		success, count := 0, 0
 		r.Date = time.Now().Format(FORMAT)
 
-		for report.Len() > 0 {
-			item := report.Pop()
-			test := new(boxSingleChanReportCase)
-			test.Input = item.(*boxSingleChanTestCase).Input
+		for manager.(*exploratoryBoxTestsManager).Cases().Len() > 0 {
+			item := manager.(*exploratoryBoxTestsManager).Cases().Pop()
+			test := new(exploratoryBoxReportCase)
+			test.Input = item.(*exploratoryBoxTestCase).Input
 
-			for i := 0; i < len(item.(*boxSingleChanTestCase).Results); i++ {
-				var t Test = *item.(*boxSingleChanTestCase).Results[i]
+			for i := 0; i < len(item.(*exploratoryBoxTestCase).Results); i++ {
+				var t Test = *item.(*exploratoryBoxTestCase).Results[i]
 
 				count++
 				if !t.Failed() {
@@ -114,19 +112,19 @@ func NewReport(Type string, report *Fifo) Report {
 		r.Coverage = float64(success) / float64(count) * float64(100)
 		return r
 
-	case "boxDualChanReport":
-		r := new(boxDualChanReport)
+	case *linearBoxTestsManager:
+		r := new(linearBoxReport)
 		success, count := 0, 0
 		r.Date = time.Now().Format(FORMAT)
 
-		for report.Len() > 0 {
-			item := report.Pop()
-			test := new(boxDualChanReportCase)
-			test.Input = item.(*boxDualChanTestCase).Input
-			test.Output = item.(*boxDualChanTestCase).Output
+		for manager.(*linearBoxTestsManager).Cases().Len() > 0 {
+			item := manager.(*linearBoxTestsManager).Cases().Pop()
+			test := new(linearBoxReportCase)
+			test.Input = item.(*linearBoxTestCase).Input
+			test.Output = item.(*linearBoxTestCase).Output
 
-			for i := 0; i < len(item.(*boxDualChanTestCase).Results); i++ {
-				var t Test = *item.(*boxDualChanTestCase).Results[i]
+			for i := 0; i < len(item.(*linearBoxTestCase).Results); i++ {
+				var t Test = *item.(*linearBoxTestCase).Results[i]
 
 				count++
 				if !t.Failed() {

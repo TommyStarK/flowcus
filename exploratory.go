@@ -14,35 +14,35 @@ import (
 func newExploratory() *exploratory {
 	return &exploratory{
 		nil,
-		nil,
 		&sync.WaitGroup{},
 		0,
 		NewFifo(),
 		nil,
 		make(chan *Input, 1),
+		nil,
 	}
 }
 
 type exploratory struct {
 	Report
-	*boxSingleChanTestsManager
 	*sync.WaitGroup
 	once     uint64
 	in       *Fifo
 	_tFuncIn BoxIF
 	cin      chan *Input
+	manager  *exploratoryBoxTestsManager
 }
 
 func (e *exploratory) Input(fn BoxIF) {
 	e._tFuncIn = fn
 }
 
-func (e *exploratory) RegisterTests(tests ...BoxSCTF) {
-	if e.boxSingleChanTestsManager == nil {
-		e.boxSingleChanTestsManager = NewBoxSingleChanTestsManager()
+func (e *exploratory) RegisterTests(tests ...BoxETF) {
+	if e.manager == nil {
+		e.manager = NewExploratoryBoxTestsManager()
 	}
 
-	e.SetTasks(tests...)
+	e.manager.SetTasks(tests...)
 }
 
 func (e *exploratory) ReportToCLI() {
@@ -64,7 +64,7 @@ func (e *exploratory) ReportToJSON(filename string) error {
 func (e *exploratory) Run() {
 	if once := atomic.LoadUint64(&e.once); once == 1 {
 		log.Fatalln("Error: Run() can be called only once")
-	} else if e.boxSingleChanTestsManager == nil {
+	} else if e.manager == nil {
 		log.Fatalln("You must register at least one test. Test function must have the following signature: func(*Test, Input)")
 	} else if e._tFuncIn == nil {
 		log.Fatalln("You must register an input")
@@ -89,11 +89,11 @@ func (e *exploratory) Run() {
 		LoopSingleChan(sig, e.cin, e.in)
 
 		for e.in.Len() > 0 {
-			e.StartWorkers(e.in.Pop().(*Input))
+			e.manager.StartWorkers(e.in.Pop().(*Input))
 		}
 	}(sig)
 	e.Wait()
 
 	close(sig)
-	e.Report = NewReport("boxSingleChanReport", e.boxSingleChanTestsManager.Fifo)
+	e.Report = NewReport(e.manager)
 }

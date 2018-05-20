@@ -71,7 +71,7 @@
     }
 
     func main() {
-        f := NewBoxDualChan("equivalency")
+        f := NewLinearBox()
         f.Input(input)
         f.Output(output)
         f.RegisterTests(test)

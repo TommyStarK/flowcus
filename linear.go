@@ -11,9 +11,8 @@ import (
 	. "github.com/TommyStarK/flowcus/internal/fifo"
 )
 
-func newEquivalency() *equivalency {
-	return &equivalency{
-		nil,
+func newLinear() *linear {
+	return &linear{
 		nil,
 		&sync.WaitGroup{},
 		0,
@@ -23,12 +22,12 @@ func newEquivalency() *equivalency {
 		nil,
 		make(chan *Input, 1),
 		make(chan *Output, 1),
+		nil,
 	}
 }
 
-type equivalency struct {
+type linear struct {
 	Report
-	*boxDualChanTestsManager
 	*sync.WaitGroup
 	once      uint64
 	in        *Fifo
@@ -37,80 +36,81 @@ type equivalency struct {
 	_tFuncOut BoxOF
 	cin       chan *Input
 	cout      chan *Output
+	manager   *linearBoxTestsManager
 }
 
-func (e *equivalency) Input(fn BoxIF) {
-	e._tFuncIn = fn
+func (l *linear) Input(fn BoxIF) {
+	l._tFuncIn = fn
 }
 
-func (e *equivalency) Output(fn BoxOF) {
-	e._tFuncOut = fn
+func (l *linear) Output(fn BoxOF) {
+	l._tFuncOut = fn
 }
 
-func (e *equivalency) RegisterTests(tests ...BoxDCTF) {
-	if e.boxDualChanTestsManager == nil {
-		e.boxDualChanTestsManager = NewBoxDualChanTestsManager()
+func (l *linear) RegisterTests(tests ...BoxLTF) {
+	if l.manager == nil {
+		l.manager = NewLinearBoxTestsManager()
 	}
 
-	e.SetTasks(tests...)
+	l.manager.SetTasks(tests...)
 }
 
-func (e *equivalency) ReportToCLI() {
-	if e.Report == nil {
+func (l *linear) ReportToCLI() {
+	if l.Report == nil {
 		log.Fatalln("Unexpected error occurred. Report is nil")
 	}
 
-	e.Report.ReportToCLI()
+	l.Report.ReportToCLI()
 }
 
-func (e *equivalency) ReportToJSON(filename string) error {
-	if e.Report == nil {
+func (l *linear) ReportToJSON(filename string) error {
+	if l.Report == nil {
 		log.Fatalln("Unexpected error occurred. Report is nil")
 	}
 
-	return e.Report.ReportToJSON(filename)
+	return l.Report.ReportToJSON(filename)
 }
 
-func (e *equivalency) Run() {
-	if once := atomic.LoadUint64(&e.once); once == 1 {
+func (l *linear) Run() {
+	if once := atomic.LoadUint64(&l.once); once == 1 {
 		log.Fatalln("Error: Run() can be called only once")
-	} else if e.boxDualChanTestsManager == nil {
+	} else if l.manager == nil {
 		log.Fatalln("You must register at least one test. Test function must have the following signature: func(*Test, Input, Output)")
-	} else if e._tFuncIn == nil {
+	} else if l._tFuncIn == nil {
 		log.Fatalln("You must register an input")
-	} else if e._tFuncOut == nil {
+	} else if l._tFuncOut == nil {
 		log.Fatalln("You must register an output")
 	}
 
-	atomic.AddUint64(&e.once, 1)
+	atomic.AddUint64(&l.once, 1)
 	sig := make(chan os.Signal, 2)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 
-	go e._tFuncIn(e.cin)
-	go e._tFuncOut(e.cout)
+	go l._tFuncIn(l.cin)
+	go l._tFuncOut(l.cout)
 
-	e.Add(1)
+	l.Add(1)
 	go func(sig chan os.Signal) {
 		defer func() {
 			if r := recover(); r != nil {
 				log.Println("recover:", r)
 			}
 
-			e.Done()
+			l.Done()
 		}()
 
-		LoopDualChan(sig, e.cin, e.cout, e.in, e.out)
+		LoopDualChan(sig, l.cin, l.cout, l.in, l.out)
 
-		if e.out.Len() != e.in.Len() {
+		if l.out.Len() != l.in.Len() {
 			log.Fatalln("An equivalence can not be made between two lists containing a different number of elements.")
 		}
 
-		for e.in.Len() > 0 {
-			e.StartWorkers(e.in.Pop().(*Input), e.out.Pop().(*Output))
+		for l.in.Len() > 0 && l.out.Len() > 0 {
+			l.manager.StartWorkers(l.in.Pop().(*Input), l.out.Pop().(*Output))
 		}
 	}(sig)
-	e.Wait()
+	l.Wait()
 
 	close(sig)
-	e.Report = NewReport("boxDualChanReport", e.boxDualChanTestsManager.Fifo)
+	l.Report = NewReport(l.manager)
 }

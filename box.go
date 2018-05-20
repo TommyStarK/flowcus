@@ -13,21 +13,31 @@ const (
 
 type BoxIF func(chan<- *Input)
 type BoxOF func(chan<- *Output)
-type BoxSCTF func(*Test, Input)
-type BoxDCTF func(*Test, Input, Output)
+type BoxETF func(*Test, Input)
+type BoxLTF func(*Test, Input, Output)
+type BoxNLTF func(*Test, []Input, []Output)
 
-type BoxSingleChan interface {
+type Exploratory interface {
 	Input(BoxIF)
-	RegisterTests(...BoxSCTF)
+	RegisterTests(...BoxETF)
 	ReportToCLI()
 	ReportToJSON(string) error
 	Run()
 }
 
-type BoxDualChan interface {
+type Linear interface {
 	Input(BoxIF)
 	Output(BoxOF)
-	RegisterTests(...BoxDCTF)
+	RegisterTests(...BoxLTF)
+	ReportToCLI()
+	ReportToJSON(string) error
+	Run()
+}
+
+type NonLinear interface {
+	Input(BoxIF)
+	Output(BoxOF)
+	RegisterTests(...BoxNLTF)
 	ReportToCLI()
 	ReportToJSON(string) error
 	Run()

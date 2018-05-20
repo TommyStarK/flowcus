@@ -1,26 +1,18 @@
 package flowcus
 
-import "strings"
-
 const (
 	FORMAT  string  = "2006-01-2 15:04:05 (MST)"
 	VERSION float64 = 0.1
 )
 
-func NewBoxDualChan(Type string) BoxDualChan {
-	switch strings.ToLower(Type) {
-	case "equivalency":
-		return newEquivalency()
-	}
-
-	return nil
+func NewEploratoryBox() Exploratory {
+	return newExploratory()
 }
 
-func NewBoxSingleChan(Type string) BoxSingleChan {
-	switch strings.ToLower(Type) {
-	case "exploratory":
-		return newExploratory()
-	}
+func NewLinearBox() Linear {
+	return newLinear()
+}
 
-	return nil
+func NewNonLinearBox() NonLinear {
+	return newNonLinear()
 }

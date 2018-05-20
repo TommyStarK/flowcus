@@ -10,36 +10,40 @@ import (
 	. "github.com/TommyStarK/flowcus/internal/ordered_map"
 )
 
-func NewBoxSingleChanTestsManager() *boxSingleChanTestsManager {
-	return &boxSingleChanTestsManager{
+func NewExploratoryBoxTestsManager() *exploratoryBoxTestsManager {
+	return &exploratoryBoxTestsManager{
 		NewFifo(),
 		NewOrderedMap(),
 		&sync.WaitGroup{},
 	}
 }
 
-type boxSingleChanTestCase struct {
+type exploratoryBoxTestCase struct {
 	Input   Input
 	Results []*Test
 }
 
-type boxSingleChanTestsManager struct {
-	*Fifo
-	*OrderedMap
-	*sync.WaitGroup
+type exploratoryBoxTestsManager struct {
+	cases *Fifo
+	tests *OrderedMap
+	wg    *sync.WaitGroup
 }
 
-func (b *boxSingleChanTestsManager) SetTasks(tasks ...BoxSCTF) {
+func (e *exploratoryBoxTestsManager) Cases() *Fifo {
+	return e.cases
+}
+
+func (e *exploratoryBoxTestsManager) SetTasks(tasks ...BoxETF) {
 	for _, task := range tasks {
-		b.Set(runtime.FuncForPC(reflect.ValueOf(task).Pointer()).Name(), task)
+		e.tests.Set(runtime.FuncForPC(reflect.ValueOf(task).Pointer()).Name(), task)
 	}
 }
 
-func (b *boxSingleChanTestsManager) StartWorkers(input *Input) {
+func (e *exploratoryBoxTestsManager) StartWorkers(input *Input) {
 	var bunch []*Test
 
-	for _, key := range b.Keys() {
-		b.Add(1)
+	for _, key := range e.tests.Keys() {
+		e.wg.Add(1)
 
 		test := NewTest()
 		go func(key interface{}, wg *sync.WaitGroup, test *Test) {
@@ -49,50 +53,54 @@ func (b *boxSingleChanTestsManager) StartWorkers(input *Input) {
 				wg.Done()
 			}()
 
-			task := b.Get(key)
+			task := e.tests.Get(key)
 			test.start = time.Now()
 			test.caller = runtime.FuncForPC(reflect.ValueOf(task).Pointer()).Name()
-			task.(BoxSCTF)(test, *input)
+			task.(BoxETF)(test, *input)
 			test.finished = true
-		}(key, b.WaitGroup, test)
+		}(key, e.wg, test)
 		<-time.After(100 * time.Microsecond)
 	}
 
-	b.Wait()
-	b.Push(&boxSingleChanTestCase{Input: *input, Results: bunch})
+	e.wg.Wait()
+	e.cases.Push(&exploratoryBoxTestCase{Input: *input, Results: bunch})
 }
 
-func NewBoxDualChanTestsManager() *boxDualChanTestsManager {
-	return &boxDualChanTestsManager{
+func NewLinearBoxTestsManager() *linearBoxTestsManager {
+	return &linearBoxTestsManager{
 		NewFifo(),
 		NewOrderedMap(),
 		&sync.WaitGroup{},
 	}
 }
 
-type boxDualChanTestCase struct {
+type linearBoxTestCase struct {
 	Input   Input
 	Output  Output
 	Results []*Test
 }
 
-type boxDualChanTestsManager struct {
-	*Fifo
-	*OrderedMap
-	*sync.WaitGroup
+type linearBoxTestsManager struct {
+	cases *Fifo
+	tests *OrderedMap
+	wg    *sync.WaitGroup
 }
 
-func (b *boxDualChanTestsManager) SetTasks(tasks ...BoxDCTF) {
+func (l *linearBoxTestsManager) Cases() *Fifo {
+	return l.cases
+}
+
+func (l *linearBoxTestsManager) SetTasks(tasks ...BoxLTF) {
 	for _, task := range tasks {
-		b.Set(runtime.FuncForPC(reflect.ValueOf(task).Pointer()).Name(), task)
+		l.tests.Set(runtime.FuncForPC(reflect.ValueOf(task).Pointer()).Name(), task)
 	}
 }
 
-func (b *boxDualChanTestsManager) StartWorkers(input *Input, output *Output) {
+func (l *linearBoxTestsManager) StartWorkers(input *Input, output *Output) {
 	var bunch []*Test
 
-	for _, key := range b.Keys() {
-		b.Add(1)
+	for _, key := range l.tests.Keys() {
+		l.wg.Add(1)
 
 		test := NewTest()
 		go func(key interface{}, wg *sync.WaitGroup, test *Test) {
@@ -102,15 +110,72 @@ func (b *boxDualChanTestsManager) StartWorkers(input *Input, output *Output) {
 				wg.Done()
 			}()
 
-			task := b.Get(key)
+			task := l.tests.Get(key)
 			test.start = time.Now()
 			test.caller = runtime.FuncForPC(reflect.ValueOf(task).Pointer()).Name()
-			task.(BoxDCTF)(test, *input, *output)
+			task.(BoxLTF)(test, *input, *output)
 			test.finished = true
-		}(key, b.WaitGroup, test)
+		}(key, l.wg, test)
 		<-time.After(100 * time.Microsecond)
 	}
 
-	b.Wait()
-	b.Push(&boxDualChanTestCase{Input: *input, Output: *output, Results: bunch})
+	l.wg.Wait()
+	l.cases.Push(&linearBoxTestCase{Input: *input, Output: *output, Results: bunch})
+}
+
+func NewNonLinearBoxTestsManager() *nonlinearBoxTestsManager {
+	return &nonlinearBoxTestsManager{
+		NewFifo(),
+		NewOrderedMap(),
+		&sync.WaitGroup{},
+	}
+}
+
+type nonlinearBoxTestCase struct {
+	Inputs  []Input
+	Outputs []Output
+	Results []*Test
+}
+
+type nonlinearBoxTestsManager struct {
+	cases *Fifo
+	tests *OrderedMap
+	wg    *sync.WaitGroup
+}
+
+func (n *nonlinearBoxTestsManager) Cases() *Fifo {
+	return n.cases
+}
+
+func (n *nonlinearBoxTestsManager) SetTasks(tasks ...BoxNLTF) {
+	for _, task := range tasks {
+		n.tests.Set(runtime.FuncForPC(reflect.ValueOf(task).Pointer()).Name(), task)
+	}
+}
+
+func (n *nonlinearBoxTestsManager) StartWorkers(inputs []Input, outputs []Output) {
+	var bunch []*Test
+
+	for _, key := range n.tests.Keys() {
+		n.wg.Add(1)
+
+		test := NewTest()
+		go func(key interface{}, wg *sync.WaitGroup, test *Test) {
+			defer func() {
+				test.duration = time.Since(test.start)
+				bunch = append(bunch, test)
+				wg.Done()
+			}()
+
+			task := n.tests.Get(key)
+			test.start = time.Now()
+			test.caller = runtime.FuncForPC(reflect.ValueOf(task).Pointer()).Name()
+			task.(BoxNLTF)(test, inputs, outputs)
+			test.finished = true
+		}(key, n.wg, test)
+		<-time.After(100 * time.Microsecond)
+	}
+
+	n.wg.Wait()
+	n.cases.Push(&nonlinearBoxTestCase{Inputs: inputs, Outputs: outputs, Results: bunch})
 }
