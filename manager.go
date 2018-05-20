@@ -10,6 +10,9 @@ import (
 	. "github.com/TommyStarK/flowcus/internal/ordered_map"
 )
 
+//
+// Exploratory Box Tests Manager
+//
 func NewExploratoryBoxTestsManager() *exploratoryBoxTestsManager {
 	return &exploratoryBoxTestsManager{
 		NewFifo(),
@@ -27,10 +30,6 @@ type exploratoryBoxTestsManager struct {
 	cases *Fifo
 	tests *OrderedMap
 	wg    *sync.WaitGroup
-}
-
-func (e *exploratoryBoxTestsManager) Cases() *Fifo {
-	return e.cases
 }
 
 func (e *exploratoryBoxTestsManager) SetTasks(tasks ...BoxETF) {
@@ -66,6 +65,9 @@ func (e *exploratoryBoxTestsManager) StartWorkers(input *Input) {
 	e.cases.Push(&exploratoryBoxTestCase{Input: *input, Results: bunch})
 }
 
+//
+// Linear Box Tests Manager
+//
 func NewLinearBoxTestsManager() *linearBoxTestsManager {
 	return &linearBoxTestsManager{
 		NewFifo(),
@@ -84,10 +86,6 @@ type linearBoxTestsManager struct {
 	cases *Fifo
 	tests *OrderedMap
 	wg    *sync.WaitGroup
-}
-
-func (l *linearBoxTestsManager) Cases() *Fifo {
-	return l.cases
 }
 
 func (l *linearBoxTestsManager) SetTasks(tasks ...BoxLTF) {
@@ -123,6 +121,9 @@ func (l *linearBoxTestsManager) StartWorkers(input *Input, output *Output) {
 	l.cases.Push(&linearBoxTestCase{Input: *input, Output: *output, Results: bunch})
 }
 
+//
+// Non Linear Box Tests Manager
+//
 func NewNonLinearBoxTestsManager() *nonlinearBoxTestsManager {
 	return &nonlinearBoxTestsManager{
 		NewFifo(),
@@ -141,10 +142,6 @@ type nonlinearBoxTestsManager struct {
 	cases *Fifo
 	tests *OrderedMap
 	wg    *sync.WaitGroup
-}
-
-func (n *nonlinearBoxTestsManager) Cases() *Fifo {
-	return n.cases
 }
 
 func (n *nonlinearBoxTestsManager) SetTasks(tasks ...BoxNLTF) {
