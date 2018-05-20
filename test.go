@@ -43,24 +43,24 @@ type Test struct {
 	success  bool
 	errors   []string
 	logs     []string
-	*sync.RWMutex
+	rwmutex  *sync.RWMutex
 }
 
 func (t *Test) error(s string) {
-	t.Lock()
-	defer t.Unlock()
+	t.rwmutex.Lock()
+	defer t.rwmutex.Unlock()
 	t.errors = append(t.errors, s)
 }
 
 func (t *Test) log(s string) {
-	t.Lock()
-	defer t.Unlock()
+	t.rwmutex.Lock()
+	defer t.rwmutex.Unlock()
 	t.logs = append(t.logs, s)
 }
 
 func (t *Test) skip() {
-	t.Lock()
-	defer t.Unlock()
+	t.rwmutex.Lock()
+	defer t.rwmutex.Unlock()
 	t.skipped = true
 }
 
@@ -87,14 +87,14 @@ func (t *Test) Fail() {
 		return
 	}
 
-	t.Lock()
-	defer t.Unlock()
+	t.rwmutex.Lock()
+	defer t.rwmutex.Unlock()
 	t.failed = true
 }
 func (t *Test) Failed() bool {
-	t.RLock()
+	t.rwmutex.RLock()
 	failed := t.failed
-	t.RUnlock()
+	t.rwmutex.RUnlock()
 	return failed
 }
 
@@ -131,8 +131,8 @@ func (t *Test) SkipNow() {
 }
 
 func (t *Test) Skipped() bool {
-	t.RLock()
+	t.rwmutex.RLock()
 	skipped := t.skipped
-	t.RUnlock()
+	t.rwmutex.RUnlock()
 	return skipped
 }
