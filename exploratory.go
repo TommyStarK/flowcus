@@ -16,22 +16,22 @@ import (
 func newExploratory() *exploratory {
 	return &exploratory{
 		nil,
-		&sync.WaitGroup{},
 		0,
 		NewFifo(),
 		nil,
 		make(chan *Input, 1),
+		&sync.WaitGroup{},
 		nil,
 	}
 }
 
 type exploratory struct {
 	Report
-	*sync.WaitGroup
 	once     uint64
 	in       *Fifo
 	_tFuncIn BoxIF
 	cin      chan *Input
+	wg       *sync.WaitGroup
 	manager  *exploratoryBoxTestsManager
 }
 
@@ -78,7 +78,7 @@ func (e *exploratory) Run() {
 
 	go e._tFuncIn(e.cin)
 
-	e.Add(1)
+	e.wg.Add(1)
 	go func(sig chan os.Signal) {
 		defer func() {
 			if r := recover(); r != nil {
@@ -92,7 +92,7 @@ func (e *exploratory) Run() {
 				}
 			}
 
-			e.Done()
+			e.wg.Done()
 		}()
 
 		LoopSingleChan(sig, e.cin, e.in)
@@ -101,7 +101,7 @@ func (e *exploratory) Run() {
 			e.manager.StartWorkers(e.in.Pop().(*Input))
 		}
 	}(sig)
-	e.Wait()
+	e.wg.Wait()
 
 	close(sig)
 	e.Report = NewReport(e.manager)

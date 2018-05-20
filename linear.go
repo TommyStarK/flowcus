@@ -16,7 +16,6 @@ import (
 func newLinear() *linear {
 	return &linear{
 		nil,
-		&sync.WaitGroup{},
 		0,
 		NewFifo(),
 		NewFifo(),
@@ -24,13 +23,13 @@ func newLinear() *linear {
 		nil,
 		make(chan *Input, 1),
 		make(chan *Output, 1),
+		&sync.WaitGroup{},
 		nil,
 	}
 }
 
 type linear struct {
 	Report
-	*sync.WaitGroup
 	once      uint64
 	in        *Fifo
 	out       *Fifo
@@ -38,6 +37,7 @@ type linear struct {
 	_tFuncOut BoxOF
 	cin       chan *Input
 	cout      chan *Output
+	wg        *sync.WaitGroup
 	manager   *linearBoxTestsManager
 }
 
@@ -91,7 +91,7 @@ func (l *linear) Run() {
 	go l._tFuncIn(l.cin)
 	go l._tFuncOut(l.cout)
 
-	l.Add(1)
+	l.wg.Add(1)
 	go func(sig chan os.Signal) {
 		defer func() {
 			if r := recover(); r != nil {
@@ -105,7 +105,7 @@ func (l *linear) Run() {
 				}
 			}
 
-			l.Done()
+			l.wg.Done()
 		}()
 
 		LoopDualChan(sig, l.cin, l.cout, l.in, l.out)
@@ -118,7 +118,7 @@ func (l *linear) Run() {
 			l.manager.StartWorkers(l.in.Pop().(*Input), l.out.Pop().(*Output))
 		}
 	}(sig)
-	l.Wait()
+	l.wg.Wait()
 
 	close(sig)
 	l.Report = NewReport(l.manager)

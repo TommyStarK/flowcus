@@ -4,7 +4,11 @@
 
     package main
 
-    import . "github.com/TommyStarK/flowcus"
+    import (
+        "reflect"
+
+        . "github.com/TommyStarK/flowcus"
+    )
 
     func input(c chan<- *Input) {
         defer func() {
@@ -37,8 +41,7 @@
         case bool:
             t.Error("wanted int received bool")
         default:
-            t.Fail()
-            t.SkipNow()
+            t.Log(reflect.TypeOf(i.Data))
         }
     }
 
