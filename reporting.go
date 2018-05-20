@@ -2,12 +2,22 @@ package flowcus
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"time"
 
 	. "github.com/TommyStarK/flowcus/internal/fifo"
 )
+
+func reportToJSON(filename string, data interface{}) error {
+	report, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+
+	return ioutil.WriteFile(filename, report, 0644)
+}
 
 type Report interface {
 	ReportToCLI()
@@ -28,18 +38,19 @@ type boxSingleChanReport struct {
 }
 
 func (b *boxSingleChanReport) ReportToCLI() {
-	log.Println("Reporting to CLI...")
+	fmt.Printf("Flowcus: Report [%s]\n", b.Date)
+	fmt.Printf("Tests took: %s ending with %g%% of success for a total of %d tests performed.\n", b.Duration.String(), b.Coverage, b.Number)
+	for i, c := range b.Cases {
+		fmt.Printf("==> Input n° %d\n", i)
+		fmt.Printf("%+v\n==> Results\n", c.Input)
+		for _, t := range c.Results {
+			fmt.Printf("%+v", t)
+		}
+	}
 }
 
 func (b *boxSingleChanReport) ReportToJSON(filename string) error {
-	log.Println("Reporting to JSON...")
-
-	report, err := json.Marshal(b)
-	if err != nil {
-		return err
-	}
-
-	return ioutil.WriteFile(filename, report, 0644)
+	return reportToJSON(filename, b)
 }
 
 type boxDualChanReportCase struct {
@@ -61,17 +72,10 @@ func (b *boxDualChanReport) ReportToCLI() {
 }
 
 func (b *boxDualChanReport) ReportToJSON(filename string) error {
-	log.Println("Reporting to JSON...")
-
-	report, err := json.Marshal(b)
-	if err != nil {
-		return err
-	}
-
-	return ioutil.WriteFile(filename, report, 0644)
+	return reportToJSON(filename, b)
 }
 
-// Find a proper, duplicate code
+// Find a proper way, duplicate code
 func NewReport(Type string, report *Fifo) Report {
 	switch Type {
 	case "boxSingleChanReport":
