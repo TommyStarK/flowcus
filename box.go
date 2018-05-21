@@ -12,15 +12,12 @@ const (
 )
 
 const (
-	BOXETF        string = "func(*Test, Input)"
-	BOXLTF        string = "func(*Test, Input, Output)"
-	BOXNLTF       string = "func(*Test, []Input, []Output)"
-	CTRLC         string = "Flowcus interrupted by the user (ctrl+c)"
-	ISRUNNING     string = "Box is already running or tests have already been run"
-	NO_INPUT_SET  string = "You must register an input function. Input function must have the following signature: func(chan<- *Input)"
-	NO_OUTPUT_SET string = "You must register an ouput function. Ouput function must have the following signature: func(chan<- *Ouput)"
-	NO_REPORT     string = "Flowcus cannot synthesize a report"
-	NO_TEST_SET   string = "You must register at least one test. Test function must have the following signature: "
+	isRunning       string = "Box is already running or tests have already been run"
+	nilReport       string = "Flowcus cannot synthesize a report"
+	noInputFuncSet  string = "You must register an input function. Input function must have the following signature: func(chan<- *Input)"
+	noOutputFuncSet string = "You must register an ouput function. Ouput function must have the following signature: func(chan<- *Ouput)"
+	noTestSet       string = "You must register at least one test. Test function must have the following signature: "
+	sigTERM         string = "Flowcus interrupted by the user (ctrl+c)"
 )
 
 type BoxIF func(chan<- *Input)

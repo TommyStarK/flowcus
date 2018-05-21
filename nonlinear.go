@@ -59,7 +59,7 @@ func (n *nonlinear) RegisterTests(tests ...BoxNLTF) {
 
 func (n *nonlinear) ReportToCLI() {
 	if n.Report == nil {
-		log.Println(NO_REPORT)
+		log.Println(nilReport)
 		return
 	}
 
@@ -68,7 +68,7 @@ func (n *nonlinear) ReportToCLI() {
 
 func (n *nonlinear) ReportToJSON(filename string) error {
 	if n.Report == nil {
-		return errors.New(NO_REPORT)
+		return errors.New(nilReport)
 	}
 
 	return n.Report.ReportToJSON(filename)
@@ -76,16 +76,16 @@ func (n *nonlinear) ReportToJSON(filename string) error {
 
 func (n *nonlinear) Run() {
 	if once := atomic.LoadUint64(&n.once); once == 1 {
-		log.Println(ISRUNNING)
+		log.Println(isRunning)
 		return
 	} else if n.manager == nil {
-		log.Println(NO_TEST_SET, BOXNLTF)
+		log.Println(noTestSet, "func(*Test, []Input, []Output)")
 		return
 	} else if n._tFuncIn == nil {
-		log.Println(NO_INPUT_SET)
+		log.Println(noInputFuncSet)
 		return
 	} else if n._tFuncOut == nil {
-		log.Println(NO_OUTPUT_SET)
+		log.Println(noOutputFuncSet)
 		return
 	}
 
@@ -103,7 +103,7 @@ func (n *nonlinear) Run() {
 				switch r.(type) {
 				case syscall.Signal:
 					if r.(syscall.Signal) == syscall.SIGINT {
-						log.Printf(CTRLC)
+						log.Printf(sigTERM)
 					}
 				default:
 					panic(errors.New(fmt.Sprintf("[Flowcus] %s", r)))

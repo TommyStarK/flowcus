@@ -59,7 +59,7 @@ func (l *linear) RegisterTests(tests ...BoxLTF) {
 
 func (l *linear) ReportToCLI() {
 	if l.Report == nil {
-		log.Println(NO_REPORT)
+		log.Println(nilReport)
 		return
 	}
 
@@ -68,7 +68,7 @@ func (l *linear) ReportToCLI() {
 
 func (l *linear) ReportToJSON(filename string) error {
 	if l.Report == nil {
-		return errors.New(NO_REPORT)
+		return errors.New(nilReport)
 	}
 
 	return l.Report.ReportToJSON(filename)
@@ -76,16 +76,16 @@ func (l *linear) ReportToJSON(filename string) error {
 
 func (l *linear) Run() {
 	if once := atomic.LoadUint64(&l.once); once == 1 {
-		log.Println(ISRUNNING)
+		log.Println(isRunning)
 		return
 	} else if l.manager == nil {
-		log.Println(NO_TEST_SET, BOXLTF)
+		log.Println(noTestSet, "func(*Test, Input, Output)")
 		return
 	} else if l._tFuncIn == nil {
-		log.Println(NO_INPUT_SET)
+		log.Println(noInputFuncSet)
 		return
 	} else if l._tFuncOut == nil {
-		log.Println(NO_OUTPUT_SET)
+		log.Println(noOutputFuncSet)
 		return
 	}
 
@@ -103,7 +103,7 @@ func (l *linear) Run() {
 				switch r.(type) {
 				case syscall.Signal:
 					if r.(syscall.Signal) == syscall.SIGINT {
-						log.Println(CTRLC)
+						log.Println(sigTERM)
 					}
 				default:
 					panic(errors.New(fmt.Sprintf("[Flowcus] %s", r)))

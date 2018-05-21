@@ -55,7 +55,7 @@
     }
 
     func main() {
-        e := NewEploratoryBox()
+        e := NewExploratoryBox()
         e.Input(input)
         e.RegisterTests(testA, testB, testC)
         e.Run()

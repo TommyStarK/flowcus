@@ -49,7 +49,7 @@ func (e *exploratory) RegisterTests(tests ...BoxETF) {
 
 func (e *exploratory) ReportToCLI() {
 	if e.Report == nil {
-		log.Println(NO_REPORT)
+		log.Println(nilReport)
 		return
 	}
 
@@ -58,7 +58,7 @@ func (e *exploratory) ReportToCLI() {
 
 func (e *exploratory) ReportToJSON(filename string) error {
 	if e.Report == nil {
-		return errors.New(NO_REPORT)
+		return errors.New(nilReport)
 	}
 
 	return e.Report.ReportToJSON(filename)
@@ -66,13 +66,13 @@ func (e *exploratory) ReportToJSON(filename string) error {
 
 func (e *exploratory) Run() {
 	if once := atomic.LoadUint64(&e.once); once == 1 {
-		log.Println(ISRUNNING)
+		log.Println(isRunning)
 		return
 	} else if e.manager == nil {
-		log.Println(NO_TEST_SET, BOXETF)
+		log.Println(noTestSet, "func(*Test, Input)")
 		return
 	} else if e._tFuncIn == nil {
-		log.Println(NO_INPUT_SET)
+		log.Println(noInputFuncSet)
 		return
 	}
 
@@ -89,7 +89,7 @@ func (e *exploratory) Run() {
 				switch r.(type) {
 				case syscall.Signal:
 					if r.(syscall.Signal) == syscall.SIGINT {
-						log.Println(CTRLC)
+						log.Println(sigTERM)
 					}
 				default:
 					panic(errors.New(fmt.Sprintf("[Flowcus] %s", r)))
