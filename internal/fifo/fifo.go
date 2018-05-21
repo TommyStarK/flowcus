@@ -1,4 +1,4 @@
-package flowcus
+package fifo
 
 import (
 	"sync"
