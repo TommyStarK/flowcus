@@ -28,6 +28,6 @@ Each Contribution is welcomed and encouraged. I do not claim to cover each use c
 
 Implementation examples:
 
-* [Black Box Testing - linear](https://github.com/TommyStarK/flowcus/blob/v2/docs/bbox-linear.md)
-* [Gray Box Testing - exploratory](https://github.com/TommyStarK/flowcus/blob/v2/docs/gbox-exploratory.md)
-* [White Box Testing - nonlinear](https://github.com/TommyStarK/flowcus/blob/v2/docs/wbox-nonlinear.md)
+* [Black Box Testing - linear](https://github.com/TommyStarK/flowcus/blob/master/docs/bbox-linear.md)
+* [Gray Box Testing - exploratory](https://github.com/TommyStarK/flowcus/blob/master/docs/gbox-exploratory.md)
+* [White Box Testing - nonlinear](https://github.com/TommyStarK/flowcus/blob/master/docs/wbox-nonlinear.md)
