@@ -103,7 +103,7 @@ func (n *nonlinear) Run() {
 				switch r.(type) {
 				case syscall.Signal:
 					if r.(syscall.Signal) == syscall.SIGINT {
-						log.Printf(sigTERM)
+						log.Printf(sigINT)
 					}
 				default:
 					panic(errors.New(fmt.Sprintf("[Flowcus] %s", r)))

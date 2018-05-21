@@ -17,7 +17,7 @@ const (
 	noInputFuncSet  string = "You must register an input function. Input function must have the following signature: func(chan<- *Input)"
 	noOutputFuncSet string = "You must register an ouput function. Ouput function must have the following signature: func(chan<- *Ouput)"
 	noTestSet       string = "You must register at least one test. Test function must have the following signature: "
-	sigTERM         string = "Flowcus interrupted by the user (ctrl+c)"
+	sigINT          string = "Flowcus interrupted by the user (ctrl+c)"
 )
 
 type BoxIF func(chan<- *Input)
