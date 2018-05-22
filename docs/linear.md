@@ -17,7 +17,6 @@
         for index := 0; index < len(inputs); index++ {
             c <- &Input{
                 Data:     inputs[index],
-                Expected: inputs[index],
             }
         }
     }
@@ -39,16 +38,12 @@
             t.Fatal("input should be of type int")
         }
 
-        if _, ok := i.Expected.(int); !ok {
-            t.Fatal("expected should be of type int")
-        }
-
         if _, ok := o.Data.(int); !ok {
             t.Fatal("output should be of type int")
         }
 
-        if i.Expected.(int) != o.Data.(int) {
-            t.Error("expected and ouput should be equal")
+        if i.Data.(int) != o.Data.(int) {
+            t.Error("input and ouput should be equal")
         } else {
             t.Log("output is as expected")
         }
