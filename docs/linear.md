@@ -15,18 +15,9 @@
         }()
 
         for index := 0; index < len(inputs); index++ {
-            if index == 5 {
-                c <- &Input{
-                    Data:     inputs[index],
-                    Expected: inputs[index],
-                    Label:    "should fail",
-                }
-            } else {
-                c <- &Input{
-                    Data:     inputs[index],
-                    Expected: inputs[index],
-                    Label:    "should succeed",
-                }
+            c <- &Input{
+                Data:     inputs[index],
+                Expected: inputs[index],
             }
         }
     }
@@ -59,7 +50,7 @@
         if i.Expected.(int) != o.Data.(int) {
             t.Error("expected and ouput should be equal")
         } else {
-            t.Log("output is as exepected")
+            t.Log("output is as expected")
         }
     }
 
