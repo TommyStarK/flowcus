@@ -10,26 +10,6 @@ import (
 	. "github.com/TommyStarK/flowcus/internal/ordered_map"
 )
 
-func acquireTest(wg *sync.WaitGroup, test *Test, bunch *[]*Test) {
-	mutex := &sync.Mutex{}
-
-	test.duration = time.Since(test.start)
-	if r := recover(); r != nil {
-		switch r.(type) {
-		case runtime.Error:
-			panic(r)
-		default:
-			test.Fail()
-			test.Error(r)
-		}
-	}
-
-	mutex.Lock()
-	*bunch = append(*bunch, test)
-	mutex.Unlock()
-	wg.Done()
-}
-
 //
 // Exploratory Box Tests Manager
 //
@@ -37,6 +17,7 @@ func NewExploratoryBoxTestsManager() *exploratoryBoxTestsManager {
 	return &exploratoryBoxTestsManager{
 		NewFifo(),
 		NewOrderedMap(),
+		&sync.Mutex{},
 		&sync.WaitGroup{},
 	}
 }
@@ -49,6 +30,7 @@ type exploratoryBoxTestCase struct {
 type exploratoryBoxTestsManager struct {
 	cases *Fifo
 	tests *OrderedMap
+	mutex *sync.Mutex
 	wg    *sync.WaitGroup
 }
 
@@ -59,15 +41,13 @@ func (e *exploratoryBoxTestsManager) SetTasks(tasks ...BoxETF) {
 }
 
 func (e *exploratoryBoxTestsManager) StartWorkers(input *Input) {
-	// var bunch []*Test
 	bunch := make([]*Test, 0)
 
 	for _, key := range e.tests.Keys() {
 		e.wg.Add(1)
 
 		test := NewTest()
-		go func(key interface{}, wg *sync.WaitGroup, test *Test) {
-			// defer acquireTest(wg, test, &bunch)
+		go func(key interface{}, test *Test) {
 			defer func() {
 				test.duration = time.Since(test.start)
 				if r := recover(); r != nil {
@@ -79,8 +59,11 @@ func (e *exploratoryBoxTestsManager) StartWorkers(input *Input) {
 						test.Error(r)
 					}
 				}
+
+				e.mutex.Lock()
 				bunch = append(bunch, test)
-				wg.Done()
+				e.mutex.Unlock()
+				e.wg.Done()
 			}()
 
 			task := e.tests.Get(key)
@@ -88,8 +71,7 @@ func (e *exploratoryBoxTestsManager) StartWorkers(input *Input) {
 			test.caller = runtime.FuncForPC(reflect.ValueOf(task).Pointer()).Name()
 			task.(BoxETF)(test, *input)
 			test.finished = true
-		}(key, e.wg, test)
-		<-time.After(100 * time.Microsecond)
+		}(key, test)
 	}
 
 	e.wg.Wait()
@@ -103,6 +85,7 @@ func NewLinearBoxTestsManager() *linearBoxTestsManager {
 	return &linearBoxTestsManager{
 		NewFifo(),
 		NewOrderedMap(),
+		&sync.Mutex{},
 		&sync.WaitGroup{},
 	}
 }
@@ -116,6 +99,7 @@ type linearBoxTestCase struct {
 type linearBoxTestsManager struct {
 	cases *Fifo
 	tests *OrderedMap
+	mutex *sync.Mutex
 	wg    *sync.WaitGroup
 }
 
@@ -126,22 +110,37 @@ func (l *linearBoxTestsManager) SetTasks(tasks ...BoxLTF) {
 }
 
 func (l *linearBoxTestsManager) StartWorkers(input *Input, output *Output) {
-	var bunch []*Test
+	bunch := make([]*Test, 0)
 
 	for _, key := range l.tests.Keys() {
 		l.wg.Add(1)
 
 		test := NewTest()
-		go func(key interface{}, wg *sync.WaitGroup, test *Test) {
-			defer acquireTest(wg, test, &bunch)
+		go func(key interface{}, test *Test) {
+			defer func() {
+				test.duration = time.Since(test.start)
+				if r := recover(); r != nil {
+					switch r.(type) {
+					case runtime.Error:
+						panic(r)
+					default:
+						test.Fail()
+						test.Error(r)
+					}
+				}
+
+				l.mutex.Lock()
+				bunch = append(bunch, test)
+				l.mutex.Unlock()
+				l.wg.Done()
+			}()
 
 			task := l.tests.Get(key)
 			test.start = time.Now()
 			test.caller = runtime.FuncForPC(reflect.ValueOf(task).Pointer()).Name()
 			task.(BoxLTF)(test, *input, *output)
 			test.finished = true
-		}(key, l.wg, test)
-		<-time.After(100 * time.Microsecond)
+		}(key, test)
 	}
 
 	l.wg.Wait()
@@ -155,6 +154,7 @@ func NewNonLinearBoxTestsManager() *nonlinearBoxTestsManager {
 	return &nonlinearBoxTestsManager{
 		NewFifo(),
 		NewOrderedMap(),
+		&sync.Mutex{},
 		&sync.WaitGroup{},
 	}
 }
@@ -168,6 +168,7 @@ type nonlinearBoxTestCase struct {
 type nonlinearBoxTestsManager struct {
 	cases *Fifo
 	tests *OrderedMap
+	mutex *sync.Mutex
 	wg    *sync.WaitGroup
 }
 
@@ -178,22 +179,37 @@ func (n *nonlinearBoxTestsManager) SetTasks(tasks ...BoxNLTF) {
 }
 
 func (n *nonlinearBoxTestsManager) StartWorkers(inputs []Input, outputs []Output) {
-	var bunch []*Test
+	bunch := make([]*Test, 0)
 
 	for _, key := range n.tests.Keys() {
 		n.wg.Add(1)
 
 		test := NewTest()
-		go func(key interface{}, wg *sync.WaitGroup, test *Test) {
-			defer acquireTest(wg, test, &bunch)
+		go func(key interface{}, test *Test) {
+			defer func() {
+				test.duration = time.Since(test.start)
+				if r := recover(); r != nil {
+					switch r.(type) {
+					case runtime.Error:
+						panic(r)
+					default:
+						test.Fail()
+						test.Error(r)
+					}
+				}
+
+				n.mutex.Lock()
+				bunch = append(bunch, test)
+				n.mutex.Unlock()
+				n.wg.Done()
+			}()
 
 			task := n.tests.Get(key)
 			test.start = time.Now()
 			test.caller = runtime.FuncForPC(reflect.ValueOf(task).Pointer()).Name()
 			task.(BoxNLTF)(test, inputs, outputs)
 			test.finished = true
-		}(key, n.wg, test)
-		<-time.After(100 * time.Microsecond)
+		}(key, test)
 	}
 
 	n.wg.Wait()
