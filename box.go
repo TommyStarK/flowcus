@@ -12,19 +12,21 @@ const (
 )
 
 const (
-	isRunning       string = "Box is already running or tests have already been run"
-	nilReport       string = "Flowcus cannot synthesize a report"
-	noInputFuncSet  string = "You must register an input function. Input function must have the following signature: func(chan<- *Input)"
-	noOutputFuncSet string = "You must register an ouput function. Ouput function must have the following signature: func(chan<- *Ouput)"
-	noTestSet       string = "You must register at least one test. Test function must have the following signature: "
-	sigINT          string = "Flowcus interrupted by the user (ctrl+c)"
+	isRunning       = "Box is already running or tests have already been run"
+	nilReport       = "Flowcus cannot synthesize a report"
+	noInputFuncSet  = "You must register an input function. Input function must have the following signature: func(chan<- *Input)"
+	noOutputFuncSet = "You must register an ouput function. Ouput function must have the following signature: func(chan<- *Ouput)"
+	noTestSet       = "You must register at least one test. Test function must have the following signature: "
+	sigINT          = "Flowcus interrupted by the user (ctrl+c)"
 )
 
-type BoxIF func(chan<- *Input)
-type BoxOF func(chan<- *Output)
-type BoxETF func(*Test, Input)
-type BoxLTF func(*Test, Input, Output)
-type BoxNLTF func(*Test, []Input, []Output)
+type (
+	BoxIF   func(chan<- *Input)
+	BoxOF   func(chan<- *Output)
+	BoxETF  func(*Test, Input)
+	BoxLTF  func(*Test, Input, Output)
+	BoxNLTF func(*Test, []Input, []Output)
+)
 
 type Exploratory interface {
 	Input(BoxIF)
@@ -53,7 +55,6 @@ type NonLinear interface {
 }
 
 func LoopSingleChan(sig chan os.Signal, cin chan *Input, in *Fifo) {
-Loop:
 	for {
 		select {
 		case signal := <-sig:
@@ -65,7 +66,7 @@ Loop:
 					in.Push(input)
 				}
 			} else {
-				break Loop
+				return
 			}
 		}
 	}
