@@ -1,6 +1,6 @@
 # Flowcus
 
-Flowcus is an easy to use data flow testing framework to implement Black Box, White Box or Gray Box Testing
+Flowcus is an easy to use data flow testing framework to implement Black Box Testing.
 
 ## Context
 
@@ -28,6 +28,6 @@ Each Contribution is welcomed and encouraged. I do not claim to cover each use c
 
 Implementation examples:
 
-* [Black Box Testing - linear](https://github.com/TommyStarK/flowcus/blob/master/docs/bbox-linear.md)
-* [Gray Box Testing - exploratory](https://github.com/TommyStarK/flowcus/blob/master/docs/gbox-exploratory.md)
-* [White Box Testing - nonlinear](https://github.com/TommyStarK/flowcus/blob/master/docs/wbox-nonlinear.md)
+* [Black Box Testing - linear](https://github.com/TommyStarK/flowcus/blob/master/docs/linear.md)
+* [Black Box Testing - exploratory](https://github.com/TommyStarK/flowcus/blob/master/docs/exploratory.md)
+* [Black Box Testing - nonlinear](https://github.com/TommyStarK/flowcus/blob/master/docs/nonlinear.md)
