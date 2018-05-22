@@ -11,6 +11,8 @@ import (
 )
 
 func acquireTest(wg *sync.WaitGroup, test *Test, bunch *[]*Test) {
+	mutex := &sync.Mutex{}
+
 	test.duration = time.Since(test.start)
 	if r := recover(); r != nil {
 		switch r.(type) {
@@ -21,7 +23,10 @@ func acquireTest(wg *sync.WaitGroup, test *Test, bunch *[]*Test) {
 			test.Error(r)
 		}
 	}
+
+	mutex.Lock()
 	*bunch = append(*bunch, test)
+	mutex.Unlock()
 	wg.Done()
 }
 
@@ -54,14 +59,29 @@ func (e *exploratoryBoxTestsManager) SetTasks(tasks ...BoxETF) {
 }
 
 func (e *exploratoryBoxTestsManager) StartWorkers(input *Input) {
-	var bunch []*Test
+	// var bunch []*Test
+	bunch := make([]*Test, 0)
 
 	for _, key := range e.tests.Keys() {
 		e.wg.Add(1)
 
 		test := NewTest()
 		go func(key interface{}, wg *sync.WaitGroup, test *Test) {
-			defer acquireTest(wg, test, &bunch)
+			// defer acquireTest(wg, test, &bunch)
+			defer func() {
+				test.duration = time.Since(test.start)
+				if r := recover(); r != nil {
+					switch r.(type) {
+					case runtime.Error:
+						panic(r)
+					default:
+						test.Fail()
+						test.Error(r)
+					}
+				}
+				bunch = append(bunch, test)
+				wg.Done()
+			}()
 
 			task := e.tests.Get(key)
 			test.start = time.Now()
