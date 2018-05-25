@@ -10,6 +10,24 @@ import (
 	. "github.com/TommyStarK/flowcus/internal/ordered_map"
 )
 
+func acquireTest(test *Test, bunch *[]*Test, mutex *sync.Mutex, waitGroup *sync.WaitGroup) {
+	test.duration = time.Since(test.start)
+	if r := recover(); r != nil {
+		switch r.(type) {
+		case runtime.Error:
+			panic(r)
+		default:
+			test.Fail()
+			test.Error(r)
+		}
+	}
+
+	mutex.Lock()
+	*bunch = append(*bunch, test)
+	mutex.Unlock()
+	waitGroup.Done()
+}
+
 //
 // Exploratory Box Tests Manager
 //
@@ -48,23 +66,7 @@ func (e *exploratoryBoxTestsManager) StartWorkers(input *Input) {
 
 		test := NewTest()
 		go func(key interface{}, test *Test) {
-			defer func() {
-				test.duration = time.Since(test.start)
-				if r := recover(); r != nil {
-					switch r.(type) {
-					case runtime.Error:
-						panic(r)
-					default:
-						test.Fail()
-						test.Error(r)
-					}
-				}
-
-				e.mutex.Lock()
-				bunch = append(bunch, test)
-				e.mutex.Unlock()
-				e.wg.Done()
-			}()
+			defer acquireTest(test, &bunch, e.mutex, e.wg)
 
 			task := e.tests.Get(key)
 			test.start = time.Now()
@@ -117,23 +119,7 @@ func (l *linearBoxTestsManager) StartWorkers(input *Input, output *Output) {
 
 		test := NewTest()
 		go func(key interface{}, test *Test) {
-			defer func() {
-				test.duration = time.Since(test.start)
-				if r := recover(); r != nil {
-					switch r.(type) {
-					case runtime.Error:
-						panic(r)
-					default:
-						test.Fail()
-						test.Error(r)
-					}
-				}
-
-				l.mutex.Lock()
-				bunch = append(bunch, test)
-				l.mutex.Unlock()
-				l.wg.Done()
-			}()
+			defer acquireTest(test, &bunch, l.mutex, l.wg)
 
 			task := l.tests.Get(key)
 			test.start = time.Now()
@@ -186,23 +172,7 @@ func (n *nonlinearBoxTestsManager) StartWorkers(inputs []Input, outputs []Output
 
 		test := NewTest()
 		go func(key interface{}, test *Test) {
-			defer func() {
-				test.duration = time.Since(test.start)
-				if r := recover(); r != nil {
-					switch r.(type) {
-					case runtime.Error:
-						panic(r)
-					default:
-						test.Fail()
-						test.Error(r)
-					}
-				}
-
-				n.mutex.Lock()
-				bunch = append(bunch, test)
-				n.mutex.Unlock()
-				n.wg.Done()
-			}()
+			defer acquireTest(test, &bunch, n.mutex, n.wg)
 
 			task := n.tests.Get(key)
 			test.start = time.Now()
