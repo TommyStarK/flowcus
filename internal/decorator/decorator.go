@@ -20,3 +20,11 @@ func Colorize(color, text string) string {
 
 	return text
 }
+
+func BoolToColorizedString(b bool) string {
+	if b {
+		return Colorize("green", fmt.Sprintf("%t", b))
+	}
+
+	return Colorize("red", fmt.Sprintf("%t", b))
+}

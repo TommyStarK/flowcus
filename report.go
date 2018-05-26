@@ -4,34 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"strconv"
 	"time"
 
+	. "github.com/TommyStarK/flowcus/internal/decorator"
 	. "github.com/TommyStarK/flowcus/internal/fifo"
 )
-
-var (
-	reportProperty       = "--- %s "
-	reportCase           = "====== case n°%d\n"
-	reportCaseTestName   = "\t* caller: %s\n"
-	reportCaseTestDetail = "\t	> %s: "
-)
-
-func exportAndAppendTest(t Test, results *[]TestExported, success, count *int) {
-	*count++
-	if !t.Failed() {
-		*success++
-	}
-	*results = append(*results, TestExported{
-		Caller:   t.caller,
-		Start:    t.start,
-		Duration: t.duration,
-		Finished: t.finished,
-		Skipped:  t.Skipped(),
-		Success:  !t.Failed(),
-		Errors:   t.errors,
-		Logs:     t.logs,
-	})
-}
 
 type Report interface {
 	ReportToCLI()
@@ -66,8 +44,21 @@ func NewReport(manager interface{}) Report {
 		tests := fifo.Pop().([]*Test)
 		results := make([]TestExported, 0)
 		for i := 0; i < len(tests); i++ {
+			count++
+			if !tests[i].Failed() {
+				success++
+			}
 			report.Duration += tests[i].duration
-			exportAndAppendTest(*tests[i], &results, &success, &count)
+			results = append(results, TestExported{
+				Caller:   tests[i].caller,
+				Start:    tests[i].start,
+				Duration: tests[i].duration,
+				Finished: tests[i].finished,
+				Skipped:  tests[i].Skipped(),
+				Success:  !tests[i].Failed(),
+				Errors:   tests[i].errors,
+				Logs:     tests[i].logs,
+			})
 		}
 		cases = append(cases, results)
 	}
@@ -97,18 +88,46 @@ func (b *BoxReport) ReportToJSON(filename string) error {
 }
 
 func (b *BoxReport) ReportToCLI() {
-	fmt.Printf("%s %s\n", fmt.Sprintf(reportProperty, "date"), b.Date)
-	fmt.Printf("%s %s\n", fmt.Sprintf(reportProperty, "duration"), b.Duration.String())
-	fmt.Printf("%s %g\n", fmt.Sprintf(reportProperty, "success"), b.Coverage)
-	fmt.Printf("%s %d\n", fmt.Sprintf(reportProperty, "number"), b.Number)
+	format := func(s string) string {
+		res := []byte{' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}
+		for i := 0; i < len(s); i++ {
+			res[i] = s[i]
+		}
+
+		return string(res)
+	}
+
+	fmt.Printf(
+		"[%s] Tests took %s. %g%% of tests succeed for a total of %d tests performed (%s).\n",
+		Colorize("purple", "Flowcus"),
+		b.Duration.String(),
+		b.Coverage,
+		b.Number,
+		b.Date,
+	)
 	for i, c := range b.Cases {
-		fmt.Printf(reportCase, i+1)
+		fmt.Printf("--- case n°%s\n", Colorize("yellow", strconv.Itoa(i+1)))
 		for _, t := range c {
-			fmt.Printf(reportCaseTestName, t.Caller)
-			fmt.Printf("%s %s\n", fmt.Sprintf(reportCaseTestDetail, "duration"), t.Duration.String())
-			fmt.Printf("%s %t\n", fmt.Sprintf(reportCaseTestDetail, "sucess"), t.Success)
-			fmt.Printf("%s %t\n", fmt.Sprintf(reportCaseTestDetail, "finished"), t.Finished)
-			fmt.Printf("%s %t\n", fmt.Sprintf(reportCaseTestDetail, "skipped"), t.Skipped)
+			fmt.Printf("\t* caller: %s\n", t.Caller)
+			fmt.Printf("%s %s\n", fmt.Sprintf("\t	> %s", format("duration:")), t.Duration.String())
+			fmt.Printf("%s %s\n", fmt.Sprintf("\t	> %s", format("success:")), BoolToColorizedString(t.Success))
+			fmt.Printf("%s %s\n", fmt.Sprintf("\t	> %s", format("finished:")), BoolToColorizedString(t.Finished))
+			fmt.Printf("%s %s\n", fmt.Sprintf("\t	> %s", format("skipped:")), BoolToColorizedString(t.Skipped))
+			for _, log := range t.Logs {
+				f := "%s %s"
+				if log[len(log)-1] != '\n' {
+					f += "\n"
+				}
+				fmt.Printf(f, fmt.Sprintf("\t	> %s", format("log:")), log)
+			}
+
+			for _, err := range t.Errors {
+				f := "%s %s"
+				if err[len(err)-1] != '\n' {
+					f += "\n"
+				}
+				fmt.Printf(f, fmt.Sprintf("\t	> %s", format("error:")), err)
+			}
 		}
 	}
 }

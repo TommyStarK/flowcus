@@ -29,3 +29,13 @@ func TestColorize(t *testing.T) {
 
 	t.Log("Colorize test succeed")
 }
+
+func TestBoolToColorizedString(t *testing.T) {
+	if "\x1b[32mtrue\x1b[0m" != BoolToColorizedString(true) {
+		t.Errorf("Wrong color. Expected green")
+	}
+
+	if "\x1b[31mfalse\x1b[0m" != BoolToColorizedString(false) {
+		t.Errorf("Wrong color. Expected red")
+	}
+}
