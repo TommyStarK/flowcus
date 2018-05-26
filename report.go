@@ -98,7 +98,7 @@ func (b *BoxReport) ReportToCLI() {
 	}
 
 	fmt.Printf(
-		"[%s] Tests took %s. %g%% of tests succeed for a total of %d tests performed (%s).\n",
+		"[%s] Test(s) took %s. %g%% of test(s) succeeded for a total of %d test(s) performed (%s).\n",
 		Colorize("purple", "Flowcus"),
 		b.Duration.String(),
 		b.Coverage,
