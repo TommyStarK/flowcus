@@ -4,12 +4,82 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
+	"strconv"
 	"time"
+
+	. "github.com/TommyStarK/flowcus/internal/decorator"
+	. "github.com/TommyStarK/flowcus/internal/fifo"
 )
 
-func reportToJSON(filename string, data interface{}) error {
-	report, err := json.Marshal(data)
+type Report interface {
+	ReportToCLI()
+	ReportToJSON(string) error
+}
+
+func NewReport(manager interface{}) Report {
+	var fifo *Fifo
+	success, count := 0, 0
+	report := new(BoxReport)
+	cases := make([][]TestExported, 0)
+	report.Date = time.Now().Format(FORMAT)
+
+	switch manager.(type) {
+	case *exploratoryBoxTestsManager:
+		report.Box = "Exploratory Box"
+		fifo = manager.(*exploratoryBoxTestsManager).cases
+
+	case *linearBoxTestsManager:
+		report.Box = "Linear Box"
+		fifo = manager.(*linearBoxTestsManager).cases
+
+	case *nonlinearBoxTestsManager:
+		report.Box = "Non Linear Box"
+		fifo = manager.(*nonlinearBoxTestsManager).cases
+
+	default:
+		return nil
+	}
+
+	for fifo.Len() > 0 {
+		tests := fifo.Pop().([]*Test)
+		results := make([]TestExported, 0)
+		for i := 0; i < len(tests); i++ {
+			count++
+			if !tests[i].Failed() {
+				success++
+			}
+			report.Duration += tests[i].duration
+			results = append(results, TestExported{
+				Caller:   tests[i].caller,
+				Start:    tests[i].start,
+				Duration: tests[i].duration,
+				Finished: tests[i].finished,
+				Skipped:  tests[i].Skipped(),
+				Success:  !tests[i].Failed(),
+				Errors:   tests[i].errors,
+				Logs:     tests[i].logs,
+			})
+		}
+		cases = append(cases, results)
+	}
+
+	report.Number = count
+	report.Coverage = float64(success) / float64(count) * float64(100)
+	report.Cases = cases
+	return report
+}
+
+type BoxReport struct {
+	Box      string
+	Date     string
+	Duration time.Duration
+	Coverage float64
+	Number   int
+	Cases    [][]TestExported
+}
+
+func (b *BoxReport) ReportToJSON(filename string) error {
+	report, err := json.Marshal(b)
 	if err != nil {
 		return err
 	}
@@ -17,207 +87,47 @@ func reportToJSON(filename string, data interface{}) error {
 	return ioutil.WriteFile(filename, report, 0644)
 }
 
-// Find a proper way, duplicate code
-func NewReport(manager interface{}) Report {
-	switch manager.(type) {
-	case *exploratoryBoxTestsManager:
-		r := new(exploratoryBoxReport)
-		success, count := 0, 0
-		r.Date = time.Now().Format(FORMAT)
-
-		for manager.(*exploratoryBoxTestsManager).cases.Len() > 0 {
-			item := manager.(*exploratoryBoxTestsManager).cases.Pop()
-			test := new(exploratoryBoxReportCase)
-			test.Input = item.(*exploratoryBoxTestCase).Input
-
-			for i := 0; i < len(item.(*exploratoryBoxTestCase).Results); i++ {
-				var t Test = *item.(*exploratoryBoxTestCase).Results[i]
-
-				count++
-				if !t.Failed() {
-					success++
-				}
-				r.Duration += t.duration
-				test.Results = append(test.Results, TestExported{
-					Caller:   t.caller,
-					Start:    t.start,
-					Duration: t.duration,
-					Finished: t.finished,
-					Skipped:  t.Skipped(),
-					Success:  !t.Failed(),
-					Errors:   t.errors,
-					Logs:     t.logs,
-				})
-			}
-			r.Cases = append(r.Cases, test)
+func (b *BoxReport) ReportToCLI() {
+	format := func(s string) string {
+		res := []byte{' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}
+		for i := 0; i < len(s); i++ {
+			res[i] = s[i]
 		}
 
-		r.Number = count
-		r.Coverage = float64(success) / float64(count) * float64(100)
-		return r
-
-	case *linearBoxTestsManager:
-		r := new(linearBoxReport)
-		success, count := 0, 0
-		r.Date = time.Now().Format(FORMAT)
-
-		for manager.(*linearBoxTestsManager).cases.Len() > 0 {
-			item := manager.(*linearBoxTestsManager).cases.Pop()
-			test := new(linearBoxReportCase)
-			test.Input = item.(*linearBoxTestCase).Input
-			test.Output = item.(*linearBoxTestCase).Output
-
-			for i := 0; i < len(item.(*linearBoxTestCase).Results); i++ {
-				var t Test = *item.(*linearBoxTestCase).Results[i]
-
-				count++
-				if !t.Failed() {
-					success++
-				}
-				r.Duration += t.duration
-				test.Results = append(test.Results, TestExported{
-					Caller:   t.caller,
-					Start:    t.start,
-					Duration: t.duration,
-					Finished: t.finished,
-					Skipped:  t.Skipped(),
-					Success:  !t.Failed(),
-					Errors:   t.errors,
-					Logs:     t.logs,
-				})
-			}
-			r.Cases = append(r.Cases, test)
-		}
-
-		r.Number = count
-		r.Coverage = float64(success) / float64(count) * float64(100)
-		return r
-
-	case *nonlinearBoxTestsManager:
-		r := new(nonLinearBoxReport)
-		success, count := 0, 0
-		r.Date = time.Now().Format(FORMAT)
-
-		for manager.(*nonlinearBoxTestsManager).cases.Len() > 0 {
-			item := manager.(*nonlinearBoxTestsManager).cases.Pop()
-			test := new(nonLinearBoxReportCase)
-			test.Inputs = item.(*nonlinearBoxTestCase).Inputs
-			test.Outputs = item.(*nonlinearBoxTestCase).Outputs
-
-			for i := 0; i < len(item.(*nonlinearBoxTestCase).Results); i++ {
-				var t Test = *item.(*nonlinearBoxTestCase).Results[i]
-
-				count++
-				if !t.Failed() {
-					success++
-				}
-				r.Duration += t.duration
-				test.Results = append(test.Results, TestExported{
-					Caller:   t.caller,
-					Start:    t.start,
-					Duration: t.duration,
-					Finished: t.finished,
-					Skipped:  t.Skipped(),
-					Success:  !t.Failed(),
-					Errors:   t.errors,
-					Logs:     t.logs,
-				})
-			}
-			r.Cases = append(r.Cases, test)
-		}
-
-		r.Number = count
-		r.Coverage = float64(success) / float64(count) * float64(100)
-		return r
+		return string(res)
 	}
 
-	return nil
-}
-
-type Report interface {
-	ReportToCLI()
-	ReportToJSON(string) error
-}
-
-//
-// Exploratory Box Report
-//
-type exploratoryBoxReportCase struct {
-	Input   Input
-	Results []TestExported
-}
-
-type exploratoryBoxReport struct {
-	Date     string
-	Duration time.Duration
-	Coverage float64
-	Number   int
-	Cases    []*exploratoryBoxReportCase
-}
-
-func (b *exploratoryBoxReport) ReportToCLI() {
-	fmt.Printf("Flowcus: Report [%s]\n", b.Date)
-	fmt.Printf("Tests took: %s ending with %g%% of success for a total of %d tests performed.\n", b.Duration.String(), b.Coverage, b.Number)
+	fmt.Printf(
+		"[%s] Test(s) took %s. %g%% of test(s) succeeded for a total of %d test(s) performed (%s).\n",
+		Colorize("purple", "Flowcus"),
+		b.Duration.String(),
+		b.Coverage,
+		b.Number,
+		b.Date,
+	)
 	for i, c := range b.Cases {
-		fmt.Printf("==> Input n° %d\n", i)
-		fmt.Printf("%+v\n==> Results\n", c.Input)
-		for _, t := range c.Results {
-			fmt.Printf("%+v", t)
+		fmt.Printf("--- case n°%s\n", Colorize("yellow", strconv.Itoa(i+1)))
+		for _, t := range c {
+			fmt.Printf("\t* caller: %s\n", t.Caller)
+			fmt.Printf("%s %s\n", fmt.Sprintf("\t	> %s", format("duration:")), t.Duration.String())
+			fmt.Printf("%s %s\n", fmt.Sprintf("\t	> %s", format("success:")), BoolToColorizedString(t.Success))
+			fmt.Printf("%s %s\n", fmt.Sprintf("\t	> %s", format("finished:")), BoolToColorizedString(t.Finished))
+			fmt.Printf("%s %s\n", fmt.Sprintf("\t	> %s", format("skipped:")), BoolToColorizedString(t.Skipped))
+			for _, log := range t.Logs {
+				f := "%s %s"
+				if log[len(log)-1] != '\n' {
+					f += "\n"
+				}
+				fmt.Printf(f, fmt.Sprintf("\t	> %s", format("log:")), log)
+			}
+
+			for _, err := range t.Errors {
+				f := "%s %s"
+				if err[len(err)-1] != '\n' {
+					f += "\n"
+				}
+				fmt.Printf(f, fmt.Sprintf("\t	> %s", format("error:")), err)
+			}
 		}
-		fmt.Printf("\n")
 	}
-}
-
-func (b *exploratoryBoxReport) ReportToJSON(filename string) error {
-	return reportToJSON(filename, b)
-}
-
-//
-// Linear Box Report
-//
-type linearBoxReportCase struct {
-	Input   Input
-	Output  Output
-	Results []TestExported
-}
-
-type linearBoxReport struct {
-	Date     string
-	Duration time.Duration
-	Coverage float64
-	Number   int
-	Cases    []*linearBoxReportCase
-}
-
-func (b *linearBoxReport) ReportToCLI() {
-	log.Println("Reporting to CLI...")
-}
-
-func (b *linearBoxReport) ReportToJSON(filename string) error {
-	return reportToJSON(filename, b)
-}
-
-//
-// Non Linear Box Report
-//
-type nonLinearBoxReportCase struct {
-	Inputs  []Input
-	Outputs []Output
-	Results []TestExported
-}
-
-type nonLinearBoxReport struct {
-	Date     string
-	Duration time.Duration
-	Coverage float64
-	Number   int
-	Cases    []*nonLinearBoxReportCase
-}
-
-func (n *nonLinearBoxReport) ReportToCLI() {
-	log.Println("Reporting to CLI...")
-}
-
-func (n *nonLinearBoxReport) ReportToJSON(filename string) error {
-	return reportToJSON(filename, n)
 }

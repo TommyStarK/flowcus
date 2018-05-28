@@ -40,11 +40,6 @@ func NewExploratoryBoxTestsManager() *exploratoryBoxTestsManager {
 	}
 }
 
-type exploratoryBoxTestCase struct {
-	Input   Input
-	Results []*Test
-}
-
 type exploratoryBoxTestsManager struct {
 	cases *Fifo
 	tests *OrderedMap
@@ -77,7 +72,7 @@ func (e *exploratoryBoxTestsManager) StartWorkers(input *Input) {
 	}
 
 	e.wg.Wait()
-	e.cases.Push(&exploratoryBoxTestCase{Input: *input, Results: bunch})
+	e.cases.Push(bunch)
 }
 
 //
@@ -90,12 +85,6 @@ func NewLinearBoxTestsManager() *linearBoxTestsManager {
 		&sync.Mutex{},
 		&sync.WaitGroup{},
 	}
-}
-
-type linearBoxTestCase struct {
-	Input   Input
-	Output  Output
-	Results []*Test
 }
 
 type linearBoxTestsManager struct {
@@ -130,7 +119,7 @@ func (l *linearBoxTestsManager) StartWorkers(input *Input, output *Output) {
 	}
 
 	l.wg.Wait()
-	l.cases.Push(&linearBoxTestCase{Input: *input, Output: *output, Results: bunch})
+	l.cases.Push(bunch)
 }
 
 //
@@ -143,12 +132,6 @@ func NewNonLinearBoxTestsManager() *nonlinearBoxTestsManager {
 		&sync.Mutex{},
 		&sync.WaitGroup{},
 	}
-}
-
-type nonlinearBoxTestCase struct {
-	Inputs  []Input
-	Outputs []Output
-	Results []*Test
 }
 
 type nonlinearBoxTestsManager struct {
@@ -183,5 +166,5 @@ func (n *nonlinearBoxTestsManager) StartWorkers(inputs []Input, outputs []Output
 	}
 
 	n.wg.Wait()
-	n.cases.Push(&nonlinearBoxTestCase{Inputs: inputs, Outputs: outputs, Results: bunch})
+	n.cases.Push(bunch)
 }

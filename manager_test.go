@@ -50,9 +50,9 @@ func TestExploratoryBoxTestsManager(t *testing.T) {
 	ebtm.StartWorkers(&Input{})
 	ebtm.tests.Delete(key)
 
-	res := ebtm.cases.Pop()
-	finished := res.(*exploratoryBoxTestCase).Results[0].finished
-	success := !res.(*exploratoryBoxTestCase).Results[0].Failed()
+	res := ebtm.cases.Pop().([]*Test)
+	finished := res[0].finished
+	success := !res[0].Failed()
 
 	if !finished || !success {
 		t.Error("test should be finished and successful")
@@ -61,9 +61,9 @@ func TestExploratoryBoxTestsManager(t *testing.T) {
 	ebtm.SetTasks(testExplorePanic)
 	ebtm.StartWorkers(&Input{})
 
-	res = ebtm.cases.Pop()
-	finished = res.(*exploratoryBoxTestCase).Results[0].finished
-	success = !res.(*exploratoryBoxTestCase).Results[0].Failed()
+	res = ebtm.cases.Pop().([]*Test)
+	finished = res[0].finished
+	success = !res[0].Failed()
 
 	if finished || success {
 		t.Error("test should not be finished or successful")
@@ -90,9 +90,9 @@ func TestLinearBoxTestsManager(t *testing.T) {
 	lbtm.StartWorkers(&Input{}, &Output{})
 	lbtm.tests.Delete(key)
 
-	res := lbtm.cases.Pop()
-	finished := res.(*linearBoxTestCase).Results[0].finished
-	success := !res.(*linearBoxTestCase).Results[0].Failed()
+	res := lbtm.cases.Pop().([]*Test)
+	finished := res[0].finished
+	success := !res[0].Failed()
 
 	if !finished || !success {
 		t.Error("test should be finished and successful")
@@ -101,9 +101,9 @@ func TestLinearBoxTestsManager(t *testing.T) {
 	lbtm.SetTasks(testLinearPanic)
 	lbtm.StartWorkers(&Input{}, &Output{})
 
-	res = lbtm.cases.Pop()
-	finished = res.(*linearBoxTestCase).Results[0].finished
-	success = !res.(*linearBoxTestCase).Results[0].Failed()
+	res = lbtm.cases.Pop().([]*Test)
+	finished = res[0].finished
+	success = !res[0].Failed()
 
 	if finished || success {
 		t.Error("test should not be finished or successful")
@@ -130,9 +130,9 @@ func TestNonLinearBoxTestsManager(t *testing.T) {
 	nlbtm.StartWorkers([]Input{Input{}, Input{}}, []Output{Output{}})
 	nlbtm.tests.Delete(key)
 
-	res := nlbtm.cases.Pop()
-	finished := res.(*nonlinearBoxTestCase).Results[0].finished
-	success := !res.(*nonlinearBoxTestCase).Results[0].Failed()
+	res := nlbtm.cases.Pop().([]*Test)
+	finished := res[0].finished
+	success := !res[0].Failed()
 
 	if !finished || !success {
 		t.Error("test should be finished and successful")
@@ -141,9 +141,9 @@ func TestNonLinearBoxTestsManager(t *testing.T) {
 	nlbtm.SetTasks(testNonLinearPanic)
 	nlbtm.StartWorkers([]Input{Input{}, Input{}}, []Output{Output{}})
 
-	res = nlbtm.cases.Pop()
-	finished = res.(*nonlinearBoxTestCase).Results[0].finished
-	success = !res.(*nonlinearBoxTestCase).Results[0].Failed()
+	res = nlbtm.cases.Pop().([]*Test)
+	finished = res[0].finished
+	success = !res[0].Failed()
 
 	if finished || success {
 		t.Error("test should not be finished or successful")
