@@ -41,6 +41,7 @@
         f.Output(output)
         f.RegisterTests(test)
         f.Run()
+        f.ReportToCLI()
         f.ReportToJSON("nonlinear.json")
     }
 ```
