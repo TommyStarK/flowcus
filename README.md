@@ -15,7 +15,7 @@ Each Contribution is welcomed and encouraged. I do not claim to cover each use c
 ## Install
 
 ```bash
-    go get github.com/TommyStarK/flowcus
+    go get github.com/TommyStarK/Flowcus
 ```
 
 ## Test
@@ -28,6 +28,6 @@ Each Contribution is welcomed and encouraged. I do not claim to cover each use c
 
 Implementation examples:
 
-* [Black Box Testing - linear](https://github.com/TommyStarK/flowcus/blob/master/docs/linear.md)
-* [Black Box Testing - exploratory](https://github.com/TommyStarK/flowcus/blob/master/docs/exploratory.md)
-* [Black Box Testing - nonlinear](https://github.com/TommyStarK/flowcus/blob/master/docs/nonlinear.md)
+* [Black Box Testing - linear](https://github.com/TommyStarK/Flowcus/blob/master/docs/linear.md)
+* [Black Box Testing - exploratory](https://github.com/TommyStarK/Flowcus/blob/master/docs/exploratory.md)
+* [Black Box Testing - nonlinear](https://github.com/TommyStarK/Flowcus/blob/master/docs/nonlinear.md)
